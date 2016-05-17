@@ -25,15 +25,19 @@ class Gps(BetaTestInterface):
             # convert to datetime
             current_datetime = self.utc_to_datetime(data.item(i, 0))
             # add point to the kml labeled with the 24 hour time
-            kml.newpoint(name=current_datetime.date(), coords=[(data.item(i, 2), data.item(i, 1))])
+            kml.newpoint(name=str(current_datetime.time()), coords=[(data.item(i, 2), data.item(i, 1))])
 
-        # use the first time in the input data to get the date and day of the week
-        t_naught = data.item(0, 0)
-        data_date = t_naught.date()
-        data_day = calendar.day_name[t_naught.weekday()]
+
+        # get the date information for this data
+        start_utc = self.get_stamp_window_from_utc(data.item(0, 0))[0]
+        start_datetime = self.utc_to_datetime(start_utc)
+        start_date = start_datetime.date
+        print start_date
+        data_day = calendar.day_name[start_datetime.weekday()]
+
         # set the file path and save name
-        file_name = "%s %s %s GPSData.kml" % (self.patientID, data_day, data_date)
-        file_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\%s" % file_name
+        file_name = "%s %s %s GPSData.kml" % (str(self.patientID), str(data_day), str(start_date))
+        file_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\gpstest.kml"
         # save the kml file and return the location
         kml.save(file_path)
         return file_path
