@@ -6,7 +6,6 @@ class Gps(BetaTestInterface):
     def __init__(self, database, patientID):
         BetaTestInterface.__init__(self, database, patientID, 'GPSbeta', 'dataMMGPS')
         self.patientID = patientID
-
     '''
     # Expected numpy array as data with utc timestamps in the first column,
     # latitude in the second, and longitude in the third. All data is expected to
@@ -34,7 +33,7 @@ class Gps(BetaTestInterface):
         data_day = calendar.day_name[t_naught.weekday()]
         # set the file path and save name
         file_name = "%s %s %s GPSData.kml" % (self.patientID, data_day, data_date)
-        file_path = "'C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\%s" % file_name
+        file_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\%s" % file_name
         # save the kml file and return the location
         kml.save(file_path)
         return file_path

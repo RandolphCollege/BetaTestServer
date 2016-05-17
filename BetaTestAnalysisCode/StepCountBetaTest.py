@@ -2,6 +2,7 @@ from BetaTestInterface import BetaTestInterface
 import numpy as np
 import matplotlib.pyplot as plt
 import calendar
+import datetime as dt
 
 
 class StepCount(BetaTestInterface):
@@ -42,12 +43,16 @@ class StepCount(BetaTestInterface):
         plt.hist(data_in, bins=np.arange(0, 86400000 + bin_width, bin_width))
 
         # Set labels on the graph
-        plt.title('%s\'s steps on %s %s' % (self.patientID, data_day, data_date))
+        plt.title(self.patientID + '\'s steps on ' + str(data_day) + ', ' + str(data_date))
         plt.xlabel('time')
         plt.ylabel('steps')
+
+        # Set time axis label
+        labels = [(t, dt.time(t).strftime('%I %p')) for i in range(24)]
+        values = [86400000 * t / 24 for t in range(24)]
+        plt.xticks(values, labels)
 
         # Save and close figure and return save location
         plt.savefig(file_path)
         plt.close(fig)
         return file_path
-
