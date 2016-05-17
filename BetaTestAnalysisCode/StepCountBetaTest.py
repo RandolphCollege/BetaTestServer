@@ -20,21 +20,29 @@ class StepCount(BetaTestInterface):
         # turn ingeractive off so that the figure is not automatically displayed
         plt.ioff()
 
-        # set bin width and file name/save location
-        bin_width = 60000
-        t_naught = data.item(0, 0)
-        data_date = t_naught.date()
-        data_day = calendar.day_name[t_naught.weekday()]
+        # get the date information for this data
+        start_utc = self.get_stamp_window_from_utc(data.item(0, 0))[0]
+        start_datetime = self.utc_to_datetime(start_utc)
+        start_date = start_datetime.date
+        data_day = calendar.day_name[start_datetime.weekday()]
+
+        # set file name and save folder path
         file_name = "%s %s %s StepCount.png" % (self.patientID, data_day, data_date)
         file_path = "'C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\%s" % file_name
 
-        # define figure, set bin size, et cetera
+        # set up figure
         fig = plt.figure()
-        plt.axis([0, max(data[:, 0]), 0, max(data[:, 1])])
-        plt.hist(data, bins=np.arange(min(data[:, 0]), max(data[:, 0]) + bin_width, bin_width))
+        delta_utc = self.datetime_to_utc(start_date)
+        data_in = []
+        for i in range(len(data)):
+            data_in += data.item(i, 0) * [data.item(i, 1) - delta_utc]
+
+        # set bin width and file name/save location
+        bin_width = 60000
+        plt.hist(data_in, bins=np.arange(0, 86400000 + bin_width, bin_width))
 
         # Set labels on the graph
-        plt.title('Step Count by Minute for %s' % self.patientID)
+        plt.title('%s\'s steps on %s %s' % (self.patientID, data_day, data_date))
         plt.xlabel('time')
         plt.ylabel('steps')
 
