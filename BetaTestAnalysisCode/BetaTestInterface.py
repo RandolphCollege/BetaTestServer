@@ -2,6 +2,10 @@ import multiprocessing
 from DatabaseManagementCode.databaseWrapper import DatabaseWrapper
 from datetime import datetime, timedelta
 import abc
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
+from pytz import utc
+from FileManagementCode.signalHandler import SignalHandler
 
 class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
@@ -20,6 +24,13 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         self.database_name = '_' + patient_id
         self.analysis_name = analysis_name
         self.table_name    = table_name
+        executors = {
+            'default': ThreadPoolExecutor(20),
+        }
+
+        self.scheduler = BackgroundScheduler(executors=executors,
+                                             timezone=utc)
+
 
         if not self.table_exists(self.database_name, 'BetaTestProfile'):
             self.create_table(database_name = self.database_name,
@@ -136,8 +147,17 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         else:
             return zip(*list(zip(*analysis_data)))
 
-    def run(self):
+    def scheduled_job(self):
         window = self.get_yesterday_window()
         data = self.get_analysis_data(window[0], window[1])
         if data:
             processed_data = self.process_data(data)
+
+    def run(self):
+        self.scheduler.start()
+        job = self.scheduler.add_job(self.scheduled_job(),
+                                     trigger='cron',
+                                     hour='0,12')
+        s = SignalHandler()
+        signal.signal(signal.SIGINT, s.handle)
+        while
