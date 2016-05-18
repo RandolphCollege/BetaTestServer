@@ -6,6 +6,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from pytz import utc
 from FileManagementCode.signalHandler import SignalHandler
+import signal
+import time
 
 class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
@@ -160,4 +162,5 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
                                      hour='0,12')
         s = SignalHandler()
         signal.signal(signal.SIGINT, s.handle)
-        while
+        while True:
+            time.sleep(1)

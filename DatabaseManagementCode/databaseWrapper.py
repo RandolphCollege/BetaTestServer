@@ -5,13 +5,8 @@ import traceback
 import sys
 import re
 import imp
-try:
-    imp.find_module('sshtunnel')
-    import sshtunnel
-    has_sshtunnel = True
-except ImportError:
-    has_sshtunnel = False
-
+import sshtunnel
+has_sshtunnel = True
 class Helper:
     __BACKUP_TABLE_NAME_FORMAT = '`%s.bak.%d`'
     __TABLE_NAME_PATTERN       = re.compile('`?((?:(?!`|\\.bak).)+)(?:\\.bak\\.(\d+))?`?')
@@ -323,8 +318,8 @@ class TableQuery:
 class DatabaseWrapper:
     __CONNECTION_ERRORS__ = { 0, 2006 }
 
-    def __init__(self, database=None, host='127.0.0.1', port=3306, user='', password='', remote_host='', remote_port=22,
-                 forward_host='127.0.0.1', forward_port=-1, remote_user='', remote_password=''):
+    def __init__(self, database=None, host='127.0.0.1', port=3307, user='root', password='moxie100', remote_host='10.10.103.17', remote_port=22,
+                 forward_host='127.0.0.1', forward_port=3306, remote_user='bzylstra', remote_password='moxie100'):
         """
         Initialize a database wrapper. Can be open locally (ex: DatabaseWrapper(user='brad', password='moxie100'))
         or remotely (ex: DatabaseWrapper(user='my_username', password='my_password', remote_host='123.456.678.901',
