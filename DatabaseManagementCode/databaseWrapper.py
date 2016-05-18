@@ -315,6 +315,7 @@ class TableQuery:
         return sql + ' FROM %s.%s AS %s%s' % (self.database_name, self.table_name, t_i,
                                               self.format_condition_statement(t_i, index, depth, prefix))
 
+
 class DatabaseWrapper:
     __CONNECTION_ERRORS__ = { 0, 2006 }
 
