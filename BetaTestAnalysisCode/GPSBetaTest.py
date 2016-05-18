@@ -25,14 +25,14 @@ class Gps(BetaTestInterface):
             # convert to datetime
             current_datetime = self.utc_to_datetime(data.item(i, 0))
             # add point to the kml labeled with the 24 hour time
-            kml.newpoint(name=str(current_datetime.time()), coords=[(data.item(i, 2), data.item(i, 1))])
-
+            pnt = kml.newpoint(name=str(current_datetime.time()), \
+                               description="Latitude: %s\nLongitude: %s" % (data.item(i, 1), data.item(i, 2)), \
+                               coords=[(data.item(i, 2), data.item(i, 1))])
 
         # get the date information for this data
         start_utc = self.get_stamp_window_from_utc(data.item(0, 0))[0]
         start_datetime = self.utc_to_datetime(start_utc)
         start_date = start_datetime.date()
-        print start_date
         data_day = calendar.day_name[start_datetime.weekday()]
 
         # set the file path and save name
