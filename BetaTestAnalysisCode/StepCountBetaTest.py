@@ -11,10 +11,11 @@ class StepCount(BetaTestInterface):
         self.patientID = patientID
 
     '''
-    #Expected input data as numpy array 3 columns
-    #column 1 as time stamp of data
-    #column 2 as number of steps between current and last timestamp
-    #code creates bin histogram of steps with 1 minute time windows
+    # Expected input data as numpy array 3 columns
+    # column 1 as time stamp of data
+    # column 2 as number of steps between current and last timestamp
+    # code creates bin histogram of steps with 1 minute time windows
+    # and returns the path of the save location
     '''
 
     def process_data(self, data):
@@ -32,14 +33,14 @@ class StepCount(BetaTestInterface):
         folder_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\"
         file_path = folder_path + file_name
 
-        # set up figure
-        fig = plt.figure()
+        # create new array (data_in) to copy timestamps for each step in that timestamp's pull
         delta_utc = self.datetime_to_utc(start_datetime)
         data_in = []
         for i in range(len(data)):
             data_in += data.item(i, 0) * [data.item(i, 1) - delta_utc]
 
-        # set bin width and file name/save location
+        # set up figure, set bin width and plot the histogram
+        fig = plt.figure()
         bin_width = 60000
         plt.hist(data_in, bins=np.arange(0, 86400000, bin_width))
 
