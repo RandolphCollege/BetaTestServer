@@ -7,7 +7,7 @@ import datetime as dt
 
 class StepCount(BetaTestInterface):
     def __init__(self, database, patientID):
-        BetaTestInterface.__init__(self, database, patientID, 'StepCountbeta', 'dataMMGPS')
+        BetaTestInterface.__init__(self, database, patientID, 'StepCountbeta', 'dataHMDSC')
         self.patientID = patientID
 
     '''
