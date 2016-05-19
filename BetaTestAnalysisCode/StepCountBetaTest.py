@@ -41,7 +41,7 @@ class StepCount(BetaTestInterface):
 
         # set up figure, set bin width and plot the histogram
         fig = plt.figure(1)
-        bin_width = 60000
+        bin_width = 900000
         # Set time axis label
         labels = [str(i) for i in range(24)]
         values = [86400000 * t / 24 for t in range(24)]
