@@ -14,12 +14,12 @@ class StepCountTester(unittest.TestCase):
                  1462144625000, 1462144531000, 1462144260000, 1462143989000, 1462143718000]
         count_list = []
         for i in range(len(times)):
-            count_list.append(random.randrange(1, 10))
+            count_list.append(random.randrange(20, 30))
         counts = np.array(count_list)
         self.data = np.column_stack((counts, times))
 
     def testStepCount(self):
-        stepcountClass = StepCount(self.database, '_foo')
+        stepcountClass = StepCount(self.database, 'foo')
         stepcountClass.process_data(self.data)
 
 if __name__ == '__main__':

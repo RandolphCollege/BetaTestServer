@@ -12,7 +12,7 @@ class DataLearn(DatabaseWrapper):
 
     def data_grab(self):
         if not self.fetch_from_database(database_name='_foo',
-                                        table_name='dataHMACC.bak.0',
+                                        table_name='dataMMGPS.bak.0',
                                         order_by=['timestamp', 'ASC']):
 
             return []
@@ -27,3 +27,8 @@ class DataLearn(DatabaseWrapper):
 test = DataLearn()
 data= test.data_grab()
 print data[0][0]
+print data[0][1]
+print data[0][2]
+print data[0][0]
+print data[1][0]
+print data[2][0]
