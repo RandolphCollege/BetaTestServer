@@ -40,21 +40,29 @@ class StepCount(BetaTestInterface):
             data_in += data.item(i, 0) * [data.item(i, 1) - delta_utc]
 
         # set up figure, set bin width and plot the histogram
-        fig = plt.figure()
+        fig = plt.figure(1)
         bin_width = 60000
-        plt.hist(data_in, bins=np.arange(0, 86400000, bin_width))
-
-        # Set labels on the graph
-        plot_title ='%s\'s steps on %s, %s' % (self.patientID, str(data_day), str(start_date))
-        plt.title(plot_title)
-        plt.xlabel('time')
-        plt.ylabel('steps')
-
         # Set time axis label
         labels = [str(i) for i in range(24)]
         values = [86400000 * t / 24 for t in range(24)]
-        plt.xticks(values, labels)
-        plt.xlim([0, 86400000])
+
+        # AM Plot
+        ax1 = fig.add_subplot(211)
+        ax1.hist(data_in, bins=np.arange(0, 43200000, bin_width))
+        ax1.xticks(values[:12], labels[:12])
+        ax1.xlim([0, 43200000])
+
+        # PM Plot
+        ax2 = fig.add_subplot(212)
+        ax2.hist(data_in, bins=np.arange(43200000, 86400000, bin_width))
+        ax2.xticks(values[12:], labels[12:])
+        ax2.xlim([43200000, 86400000])
+
+        # Set labels on the graph
+        plot_title ='%s\'s steps on %s, %s' % (self.patientID, str(data_day), str(start_date))
+        ax1.title(plot_title)
+        fig.text(0.5, 0.04, 'Time', ha='center', va='center)')
+        fig.text(0.06, 0.5, 'Steps', ha='center', va='center', rotation='vertical')
 
         # Save and close figure and return save location
         plt.savefig(file_path)

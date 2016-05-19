@@ -24,9 +24,9 @@ class Gps(BetaTestInterface):
         for i in range(len(data)):
             # convert to datetime
             current_datetime = self.utc_to_datetime(data.item(i, 0))
-            # add point to the kml labeled with the 24 hour time
-            pnt = kml.newpoint(name=str(current_datetime.time()), \
-                               description="Latitude: %s\nLongitude: %s" % (data.item(i, 1), data.item(i, 2)), \
+            # add point to the kml labeled with the 24 hour time and coordinates
+            pnt = kml.newpoint(name=str(current_datetime.time()),
+                               description="Latitude: %s\nLongitude: %s" % (data.item(i, 1), data.item(i, 2)),
                                coords=[(data.item(i, 2), data.item(i, 1))])
 
         # get the date information for this data
