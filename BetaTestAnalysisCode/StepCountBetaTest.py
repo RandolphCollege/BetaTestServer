@@ -24,7 +24,7 @@ class StepCount(BetaTestInterface):
         plt.ioff()
 
         # get the date information for this data
-        start_utc = self.get_stamp_window_from_utc(data[0][1])[0]
+        start_utc = self.get_stamp_window_from_utc(data[0][0])[0]
         start_datetime = self.utc_to_datetime(start_utc)
         start_date = start_datetime.date()
         data_day = calendar.day_name[start_datetime.weekday()]
