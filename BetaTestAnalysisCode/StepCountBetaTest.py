@@ -11,7 +11,7 @@ class StepCount(BetaTestInterface):
         self.patientID = patientID
 
     '''
-    # Expected input data as numpy array 3 columns
+    # Expected input data as numpy array 2 columns
     # column 1 as time stamp of data
     # column 2 as number of steps between current and last timestamp
     # code creates bin histogram of steps with 1 minute time windows
@@ -23,7 +23,7 @@ class StepCount(BetaTestInterface):
         plt.ioff()
 
         # get the date information for this data
-        start_utc = self.get_stamp_window_from_utc(data.item(0, 1))[0]
+        start_utc = self.get_stamp_window_from_utc(data.item(0, 0))[0]
         start_datetime = self.utc_to_datetime(start_utc)
         start_date = start_datetime.date()
         data_day = calendar.day_name[start_datetime.weekday()]
@@ -37,7 +37,7 @@ class StepCount(BetaTestInterface):
         delta_utc = self.datetime_to_utc(start_datetime)
         data_in = []
         for i in range(len(data)):
-            data_in += data.item(i, 0) * [data.item(i, 1) - delta_utc]
+            data_in += data.item(i, 1) * [data.item(i, 0) - delta_utc]
 
         # set up figure, set bin width and plot the histogram
         fig = plt.figure(1)
@@ -49,22 +49,24 @@ class StepCount(BetaTestInterface):
         # AM Plot
         ax1 = fig.add_subplot(211)
         ax1.hist(data_in, bins=np.arange(0, 43200000, bin_width))
-        ax1.xticks(values[:12], labels[:12])
-        ax1.xlim([0, 43200000])
+        ax1.set_xticks(values[:12])
+        ax1.set_xticklabels(labels[:12])
+        ax1.set_xlim([0, 43200000])
 
         # PM Plot
-        ax2 = fig.add_subplot(212)
+        ax2 = fig.add_subplot(2, 1, 2, sharey=ax1)
         ax2.hist(data_in, bins=np.arange(43200000, 86400000, bin_width))
-        ax2.xticks(values[12:], labels[12:])
-        ax2.xlim([43200000, 86400000])
+        ax2.set_xticks(values[12:])
+        ax2.set_xticklabels(labels[12:])
+        ax2.set_xlim([43200000, 86400000])
 
         # Set labels on the graph
         plot_title ='%s\'s steps on %s, %s' % (self.patientID, str(data_day), str(start_date))
-        ax1.title(plot_title)
-        fig.text(0.5, 0.04, 'Time', ha='center', va='center)')
-        fig.text(0.06, 0.5, 'Steps', ha='center', va='center', rotation='vertical')
+        ax1.set_title(plot_title)
+        ax2.set_xlabel('Time', fontsize=18)
+        fig.text(.028, .525, 'Steps', rotation='vertical', fontsize=18)
 
         # Save and close figure and return save location
         plt.savefig(file_path)
-        plt.close(fig)
+        plt.close()
         return file_path
