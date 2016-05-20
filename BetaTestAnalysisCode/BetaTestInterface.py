@@ -104,6 +104,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
     def get_latest_stamp_window(self):
         latest_time = datetime.now()
+        latest_time = self.datetime_to_utc(latest_time)
         return self.get_stamp_window_from_utc(latest_time)
 
     def get_yesterday_window(self):
@@ -112,7 +113,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
         :return:
         """
-        ms_per_metric_window = 86400000
+        ms_per_metric_window = 86400000*3
         late_window  = self.get_latest_stamp_window()
         return [late_window[0] - ms_per_metric_window, late_window[1] - ms_per_metric_window]
 
@@ -156,11 +157,4 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
             processed_data = self.process_data(data)
 
     def run(self):
-        self.scheduler.start()
-        job = self.scheduler.add_job(self.scheduled_job(),
-                                     trigger='cron',
-                                     hour='0,12')
-        s = SignalHandler()
-        signal.signal(signal.SIGINT, s.handle)
-        while True:
-            time.sleep(1)
+        self.scheduled_job()

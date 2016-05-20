@@ -319,7 +319,7 @@ class TableQuery:
 class DatabaseWrapper:
     __CONNECTION_ERRORS__ = { 0, 2006 }
 
-    def __init__(self, database=None, host='127.0.0.1', port=3307, user='root', password='moxie100', remote_host='10.10.103.17', remote_port=22,
+    def __init__(self, database=None, host='127.0.0.1', port=3307, user='root', password='', remote_host='10.10.103.17', remote_port=22,
                  forward_host='127.0.0.1', forward_port=3306, remote_user='bzylstra', remote_password='moxie100'):
         """
         Initialize a database wrapper. Can be open locally (ex: DatabaseWrapper(user='brad', password='moxie100'))

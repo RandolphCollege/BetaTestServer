@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
+import os
 
 
 class StepCount(BetaTestInterface):
@@ -23,21 +24,25 @@ class StepCount(BetaTestInterface):
         plt.ioff()
 
         # get the date information for this data
-        start_utc = self.get_stamp_window_from_utc(data.item(0, 0))[0]
+        start_utc = self.get_stamp_window_from_utc(data[0][1])[0]
         start_datetime = self.utc_to_datetime(start_utc)
         start_date = start_datetime.date()
         data_day = calendar.day_name[start_datetime.weekday()]
 
         # set file name and save folder path
         file_name = "%s_%s_%s_StepCount.png" % (self.patientID, data_day, start_date)
-        folder_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\"
-        file_path = folder_path + file_name
+        current_dir = os.getcwd()
+        save_file_path = 'stepSaves'
+        step_save_path = os.path.join(current_dir, save_file_path)
+        if not os.path.exists(step_save_path):
+            os.makedirs(step_save_path)
+        file_path = os.path.join(step_save_path, file_name)
 
         # create new array (data_in) to copy timestamps for each step in that timestamp's pull
         delta_utc = self.datetime_to_utc(start_datetime)
         data_in = []
         for i in range(len(data)):
-            data_in += data.item(i, 1) * [data.item(i, 0) - delta_utc]
+            data_in += data[i][1] * [data[i][0] - delta_utc]
 
         # set up figure, set bin width and plot the histogram
         fig = plt.figure(1)
