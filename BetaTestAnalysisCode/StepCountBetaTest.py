@@ -30,7 +30,7 @@ class StepCount(BetaTestInterface):
         data_day = calendar.day_name[start_datetime.weekday()]
 
         # set file name and save folder path
-        file_name = "%s_%s_%s_StepCount.png" % (self.patientID, data_day, start_date)
+        file_name = "%s_%s_%s_StepCount.png" % (self.patientID, start_date, data_day)
         current_dir = os.getcwd()
         save_file_path = 'stepSaves'
         step_save_path = os.path.join(current_dir, save_file_path)
@@ -68,7 +68,7 @@ class StepCount(BetaTestInterface):
         # Set labels on the graph
         plot_title ='%s\'s steps on %s, %s' % (self.patientID, str(data_day), str(start_date))
         ax1.set_title(plot_title)
-        ax2.set_xlabel('Time', fontsize=18)
+        ax2.set_xlabel('Time (each rectangle represents 15 minutes)', fontsize=18)
         fig.text(.028, .525, 'Steps', rotation='vertical', fontsize=18)
 
         # Save and close figure and return save location

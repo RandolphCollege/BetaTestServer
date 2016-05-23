@@ -20,9 +20,9 @@ class RoomLocation(BetaTestInterface):
     # on the y axis and time on the x axis
     '''
     def get_room_list(self):
-        self.fetch_from_database(database_name = self.database_name,
-                                 table_name    = 'rooms',
-                                 to_fetch     = 'ROOM_NAME')
+        self.fetch_from_database(database_name =self.database_name,
+                                 table_name    ='rooms',
+                                 to_fetch      ='ROOM_NAME')
         data = self.fetchall()
         rooms = zip(*data)[0]
         rooms = list(rooms)
@@ -91,7 +91,7 @@ class RoomLocation(BetaTestInterface):
         room_list = self.get_room_list()
 
         # set file name and save folder path
-        file_name = "%s_%s_%s_RoomLocation.png" % (self.patientID, data_day, start_date)
+        file_name = "%s_%s_%s_RoomLocation.png" % (self.patientID, start_date, data_day)
         current_dir = os.getcwd()
         save_file_path = 'roomSaves'
         gps_save_path = os.path.join(current_dir, save_file_path)
