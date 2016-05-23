@@ -27,6 +27,7 @@ class RoomLocation(BetaTestInterface):
         rooms = zip(*data)[0]
         rooms = list(rooms)
         rooms.append('Room Not Know')
+        rooms.append('No Connection')
         return rooms
 
     def get_analysis_data(self, start_stamp, end_stamp):
@@ -100,24 +101,34 @@ class RoomLocation(BetaTestInterface):
 
         # set up variable for previously occupied room and lists to fill
         # with durations of room occupations and the corresponding rooms
-        last_room = room_data[0]
-        last_time = time_data[0]
+        previous_room = 'No Connection'
+        previous_time = start_utc
         room_durations = []
         room_locations = []
 
         # looping through the entire day's data...
         for i in range(len(data)):
             current_room = room_data[i]
-            if not current_room == last_room:
+            current_duration = time_data[i] - previous_time
+            if current_room != previous_room and current_duration <= 60000:
                 # if the room just changed,
-                room_durations += [time_data[i] - last_time]
-                room_locations.append(last_room)
-                last_time = time_data[i]
-                last_room = current_room
+                if previous_room == 'No Connection':
+                    previous_room = current_room
+                room_durations += [current_duration]
+                room_locations.append(previous_room)
+                previous_time = time_data[i]
+                previous_room = current_room
+            elif current_duration > 60000:
+                room_durations += 60000
+                room_locations.append(previous_room)
+                room_durations += [current_duration - 60000]
+                room_locations.append('No Connection')
+                previous_time = time_data[i]
+                previous_room = current_room
 
         # include end of day data missed by the for loop
-        room_durations += [time_data[-1] - last_time]
-        room_locations.append(last_room)
+        room_durations += [time_data[-1] - previous_time]
+        room_locations.append(previous_room)
 
         # Don't hate me for being a hack...
         # Create lists for each time frame as full or empty
