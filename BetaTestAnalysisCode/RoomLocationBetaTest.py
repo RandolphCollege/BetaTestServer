@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
+import os
+import pickle
 
 
 class RoomLocation(BetaTestInterface):
@@ -18,10 +20,59 @@ class RoomLocation(BetaTestInterface):
     # on the y axis and time on the x axis
     '''
     def get_room_list(self):
-        rooms = ['family', 'living', 'bedroom', 'bathroom', 'utility']
+        self.fetch_from_database(database_name = self.database_name,
+                                 table_name    = 'rooms',
+                                 to_fetch     = 'ROOM_NAME')
+        data = self.fetchall()
+        rooms = zip(*data)[0]
+        rooms = list(rooms)
+        rooms.append('Room Not Know')
         return rooms
 
+    def get_analysis_data(self, start_stamp, end_stamp):
+        """
+        Returns the data between the time frame specified
+        :return:
+        """
+
+        if not self.fetch_from_database(database_name=self.database_name,
+                                        table_name=self.table_name,
+                                        to_fetch='analysis_data',
+                                        where=['start_window', '=', start_stamp]):
+            return []
+        else:
+            metric_data = self.fetchall()
+
+        if len(metric_data) == 0:
+            return []
+        else:
+            return np.array(pickle.loads(zip(*list(zip(*metric_data)))[0][0])[0])
+
+    def filter_room_data(self, data):
+        last_values_list = []
+        prior_room = ''
+        room_trans = 0
+        #data = [row[1] for row in data]
+        filtered_data = []
+        for i in data:
+            if i[1] != prior_room:
+                if len(last_values_list) >= 10:
+                    room_trans += 1
+                    last_values_list = [i[1]]
+                    prior_room = i[1]
+                    filtered_data.append(i)
+                else:
+                    last_values_list = [i[1]]
+                    prior_room = i[1]
+                    filtered_data = filtered_data[:(len(filtered_data) - len(last_values_list)-1)]
+            if i[1] == prior_room:
+                last_values_list.append(i[1])
+                filtered_data.append(i)
+        return np.array(filtered_data)
+
     def process_data(self, data):
+        #data = self.filter_room_data(data)
+        #print data
         time_data = np.hsplit(data, 2)[0].tolist()
         time_data = map(lambda x: int(x[0]), time_data)
         room_data = np.hsplit(data, 2)[1]
@@ -40,8 +91,12 @@ class RoomLocation(BetaTestInterface):
 
         # set file name and save folder path
         file_name = "%s_%s_%s_RoomLocation.png" % (self.patientID, data_day, start_date)
-        folder_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\"
-        file_path = folder_path + file_name
+        current_dir = os.getcwd()
+        save_file_path = 'roomSaves'
+        gps_save_path = os.path.join(current_dir, save_file_path)
+        if not os.path.exists(gps_save_path):
+            os.makedirs(gps_save_path)
+        file_path = os.path.join(gps_save_path, file_name)
 
         # set up variable for previously occupied room and lists to fill
         # with durations of room occupations and the corresponding rooms

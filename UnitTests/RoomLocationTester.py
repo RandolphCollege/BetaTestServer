@@ -7,7 +7,7 @@ class RoomLocationTester(unittest.TestCase):
 
     def setUp(self):
         # Write your init code here
-        self.database = ("localhost", "root", "moxie100")
+        self.database = ("localhost", "root", "")
         times = [1462146167000, 1462143357000, 1462141001000, 1462139166000, 1462126467000,
                  1462123324000, 1462122094000, 1462120947000, 1462077707000, 1462092263000,
                  1462084847000, 1462105764000]
@@ -20,8 +20,17 @@ class RoomLocationTester(unittest.TestCase):
         self.data = np.column_stack((times, locations))
 
     def testRoomLocation(self):
-        roomlocationClass = RoomLocation(self.database, 'foo')
-        roomlocationClass.process_data(self.data)
+        roomlocationClass = RoomLocation(self.database, '2775')
+        roomlocationClass.start()
+        roomlocationClass.join()
+    def testRoomGrab(self):
+        roomlocationClass = RoomLocation(self.database, '2775')
+        print roomlocationClass.get_room_list()
+    def testDataGrab(self):
+        roomlocationClass = RoomLocation(self.database, '2775')
+        window = roomlocationClass.get_yesterday_window()
+        data = roomlocationClass.get_analysis_data(window[0], window[1])
+        print data
 
 if __name__ == '__main__':
     runner = unittest.main()

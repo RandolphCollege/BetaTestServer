@@ -113,7 +113,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
         :return:
         """
-        ms_per_metric_window = 86400000*3
+        ms_per_metric_window = 86400000*7
         late_window  = self.get_latest_stamp_window()
         return [late_window[0] - ms_per_metric_window, late_window[1] - ms_per_metric_window]
 
@@ -153,7 +153,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
     def scheduled_job(self):
         window = self.get_yesterday_window()
         data = self.get_analysis_data(window[0], window[1])
-        if data:
+        if data != []:
             processed_data = self.process_data(data)
 
     def run(self):
