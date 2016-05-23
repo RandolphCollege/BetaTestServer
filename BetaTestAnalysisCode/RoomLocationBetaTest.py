@@ -130,7 +130,7 @@ class RoomLocation(BetaTestInterface):
         room_durations += [time_data[-1] - previous_time]
         room_locations.append(previous_room)
 
-        # Don't hate me for being a hack...
+        # Don't hate me for being a hack ...
         # Create lists for each time frame as full or empty
         null_dict = {}
         full_dict = {}
