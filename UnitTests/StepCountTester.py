@@ -20,8 +20,8 @@ class StepCountTester(unittest.TestCase):
 
     def testStepCount(self):
         stepcountClass = StepCount(self.database, 'george.netscher')
-        stepcountClass.start()
-        stepcountClass.join()
-
+        #stepcountClass.start()
+        #stepcountClass.join()
+        stepcountClass.process_data(self.data)
 if __name__ == '__main__':
     runner = unittest.main()

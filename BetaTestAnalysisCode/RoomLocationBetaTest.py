@@ -11,9 +11,9 @@ class RoomLocation(BetaTestInterface):
         self.patientID = patientID
 
     '''
-    # Expected numpy array input as data. 2 columns.
-    # First column as timestamp
-    # Second column as room location
+    # Expected structured numpy array input as data. 2 columns.
+    # First column as timestamp formatted as an integer or long
+    # Second column as room location formatted as a string
     # Returns file save location of bar chart with location
     # on the y axis and time on the x axis
     '''
@@ -55,15 +55,16 @@ class RoomLocation(BetaTestInterface):
             current_room = room_data[i]
             if not current_room == last_room:
                 # if the room just changed,
-                room_durations += [last_time - time_data[i - 1]]
+                room_durations += [time_data[i] - last_time]
                 room_locations.append(last_room)
                 last_time = time_data[i]
                 last_room = current_room
 
         # include end of day data missed by the for loop
-        room_durations += [last_time - time_data[-1]]
+        room_durations += [time_data[-1] - last_time]
         room_locations.append(last_room)
 
+        # Don't hate me for being a hack...
         # Create lists for each time frame as full or empty
         null_dict = {}
         full_dict = {}
@@ -87,41 +88,44 @@ class RoomLocation(BetaTestInterface):
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-        # set base of plot
-        ax.bar(ind, full_dict['full_0'], bar_width, color='b', edgecolor='none')
-        ax.bar(ind, null_dict['null_0'], bar_width, color='w', edgecolor='none', bottom=full_dict['full_0'])
-
-        # looping through remaining time frames
-        for p in range(1, len(null_dict)):
-            ax.bar(ind, full_dict['full_%s' % p], bar_width, color='b',
-                   edgecolor='none', bottom=null_dict['null_%s' % (p-1)])
-            ax.bar(ind, null_dict['null_%s' % p], bar_width, color='w',
-                   edgecolor='none', bottom=full_dict['full_%s' % p])
-
-        for j in range(1, len(null_dict)):
-            print full_dict['full_%s' % j]
         # set axis labels and graph title
-        ax.set_xlabel('Location')
-        ax.set_ylabel('Time')
+        ax.set_ylabel('Location')
+        ax.set_xlabel('Time')
         plot_title = '%s\'s room location on %s, %s' % (self.patientID, str(data_day), str(start_date))
         ax.set_title(plot_title)
-        fig.show()
+
         # Set time axis labels
         labels = [str(i) for i in range(24)]
         values = [86400000 * t / 24 for t in range(24)]
-        ax.set_yticks(values)
-        ax.set_yticklabels(labels)
-        ax.set_ylim([0, 86400000])
-        fig.show()
-        # set location axis labels
-        ax.set_xticks(ind + bar_width/2)
-        ax.set_xticklabels(room_list)
+        ax.set_xticks(values)
+        ax.set_xticklabels(labels)
+        ax.set_xlim([0, 86400000])
 
-        # flip axis so that time is on the x and location on the y
-        #plt.gca().invert_xaxis()
-        #plt.gca().invert_yaxis()
+        # set location axis labels
+        ax.set_yticks(ind)
+        ax.set_yticklabels(room_list)
+        auto_top = ax.get_ylim()[1]
+        ax.set_ylim(-bar_width, auto_top + bar_width)
+
+        # fix figure so that axis labels aren't cutoff
+        plt.gcf().tight_layout()
+
+        # set base of plot
+        left_bound = np.zeros(len(room_list))
+        left_bound += [time_data[0] - start_utc]
+        ax.barh(ind, full_dict['full_0'], bar_width, color='b', align='center', edgecolor='none', left=left_bound)
+        ax.barh(ind, null_dict['null_0'], bar_width, color='w', align='center', edgecolor='none', left=left_bound)
+
+        # looping through remaining time frames
+        for p in range(1, len(null_dict)):
+            time_add = room_durations[p - 1]
+            left_bound += time_add
+            ax.barh(ind, full_dict['full_%s' % p], bar_width, color='b',
+                    align='center', edgecolor='none', left=left_bound)
+            ax.barh(ind, null_dict['null_%s' % p], bar_width, color='w',
+                    align='center', edgecolor='none', left=left_bound)
 
         # save the plot and return the save location
-        #plt.savefig(file_path)
-        #plt.close(fig)
+        plt.savefig(file_path)
+        plt.close(fig)
         return file_path
