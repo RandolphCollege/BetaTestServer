@@ -5,8 +5,13 @@ import traceback
 import sys
 import re
 import imp
-import sshtunnel
-has_sshtunnel = True
+try:
+    imp.find_module('sshtunnel')
+    import sshtunnel
+    has_sshtunnel = True
+except ImportError:
+    has_sshtunnel = False
+
 class Helper:
     __BACKUP_TABLE_NAME_FORMAT = '`%s.bak.%d`'
     __TABLE_NAME_PATTERN       = re.compile('`?((?:(?!`|\\.bak).)+)(?:\\.bak\\.(\d+))?`?')
@@ -315,12 +320,11 @@ class TableQuery:
         return sql + ' FROM %s.%s AS %s%s' % (self.database_name, self.table_name, t_i,
                                               self.format_condition_statement(t_i, index, depth, prefix))
 
-
 class DatabaseWrapper:
     __CONNECTION_ERRORS__ = { 0, 2006 }
 
-    def __init__(self, database=None, host='127.0.0.1', port=3307, user='root', password='', remote_host='', remote_port=22,
-                 forward_host='127.0.0.1', forward_port=3306, remote_user='', remote_password=''):
+    def __init__(self, database=None, host='127.0.0.1', port=3306, user='', password='', remote_host='', remote_port=22,
+                 forward_host='127.0.0.1', forward_port=-1, remote_user='', remote_password=''):
         """
         Initialize a database wrapper. Can be open locally (ex: DatabaseWrapper(user='brad', password='moxie100'))
         or remotely (ex: DatabaseWrapper(user='my_username', password='my_password', remote_host='123.456.678.901',
@@ -455,7 +459,7 @@ class DatabaseWrapper:
     def drop_database(self, database_name):
         """
         Drop the given database. Be careful, all the data contained in the database will be lost!
-        :param database_name: Name of the database to drop.
+        :param database_name: Name of teh database to drop.
         :return: Returns True if the operation is successful, False otherwise
         """
         database_name = Helper.format_database_name(database_name)
