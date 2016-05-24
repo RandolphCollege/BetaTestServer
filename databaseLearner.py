@@ -124,7 +124,7 @@ class DataLearn(DatabaseWrapper):
         current_dir = os.getcwd()
         save_file_path = 'databaseSaves'
         database_save_path = os.path.join(current_dir, save_file_path)
-        file_name = 'testfile'
+        file_name = 'testfile4'
         if not os.path.exists(database_save_path):
             os.makedirs(database_save_path)
         file_path = os.path.join(database_save_path, file_name)
@@ -143,7 +143,7 @@ class DataLearn(DatabaseWrapper):
                 f.write('\n')
 
                 column_titles = self.table_columns(current_database, table_list[tbl])
-                column_types = [str(type(t)) for t in column_titles]
+                column_types = self.table_column_types(current_database, table_list[tbl])
                 if table_list[tbl] != 'AnalysisRoomLocation':
                     data = self.get_analysis_data(current_database, table_list[tbl], start_stamp, end_stamp)
                 else:
@@ -158,7 +158,8 @@ class DataLearn(DatabaseWrapper):
                 f.write(json_types)
                 f.write('\n')
                 f.write(json_table)
-                f.write('\n')
+                f.write('\nNext_Table\n')
+        f.close()
 
     def read_one_day(self, file_path):
         f = open(file_path, 'r')
@@ -171,9 +172,12 @@ class DataLearn(DatabaseWrapper):
                 new_table = False
                 continue
 
-            elif line == '\n':
+            elif line == 'Next_Table\n':
                 new_table = True
                 continue
+
+            elif line == '':
+                break
 
             else:
                 line = line.rstrip('\n')
@@ -198,16 +202,18 @@ class DataLearn(DatabaseWrapper):
 
                 elif fill_table == 2:
                     fill_table += 1
-                    if not self.table_exists(current_database, line):
+                    if not self.table_exists(current_database, current_table):
                         self.create_table(current_database, current_table, current_columns, json.loads(line))
 
                 elif fill_table == 3:
                     fill_table = 0
-                    self.insert_into_database(current_database, current_table, current_columns, json.loads(line))
+                    if json.loads(line) != []:
+                        self.insert_into_database(current_database, current_table, current_columns, json.loads(line))
+        f.close()
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'testfile'
+file_name = 'testfile4'
 file_path = os.path.join(current_dir, file_name)
 
 data_grab.read_one_day(file_path)

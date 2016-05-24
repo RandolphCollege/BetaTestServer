@@ -646,6 +646,27 @@ class DatabaseWrapper:
             Helper.print_database_error('looking for columns list in %s.%s' % (database_name, table_name), sql, [], e)
             return []
 
+    def table_column_types(self, database_name, table_name):
+        """
+        Get the names of the columns in the given table.
+        :param database_name: Name of the database to look into.
+        :param table_name:    Name of the table to look into.
+        :return: The column types or an empty list if an error occurs.
+        """
+        database_name = Helper.format_database_name(database_name)
+        table_name    = Helper.format_table_name(table_name)
+        sql           = 'SELECT column_type FROM information_schema.columns WHERE table_schema=\'%s\' AND table_name=\'%s\'' % \
+                        (database_name[1:-1], table_name[1:-1])
+        try:
+            self.__cur.execute(sql)
+            self.__database_connector.commit()
+            return [row[0] for row in self]
+        except MySQLdb.Error as e:
+            if e.args[0] in DatabaseWrapper.__CONNECTION_ERRORS__:
+                return self.__reconnect_and_retry(e, self.table_columns, database_name, table_name)
+            Helper.print_database_error('looking for columns list in %s.%s' % (database_name, table_name), sql, [], e)
+            return []
+
     def insert_into_database(self, database_name, table_name, column_names, values, on_duplicate_update=[]):
         """
         Insert the given values into the database. If the table contains a unique key and the corresponding value
