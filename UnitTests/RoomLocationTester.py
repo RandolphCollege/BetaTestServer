@@ -3,6 +3,7 @@ import numpy as np
 import random
 from BetaTestAnalysisCode.RoomLocationBetaTest import RoomLocation
 
+
 class RoomLocationTester(unittest.TestCase):
 
     def setUp(self):

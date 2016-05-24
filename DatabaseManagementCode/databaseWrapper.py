@@ -455,7 +455,7 @@ class DatabaseWrapper:
     def drop_database(self, database_name):
         """
         Drop the given database. Be careful, all the data contained in the database will be lost!
-        :param database_name: Name of teh database to drop.
+        :param database_name: Name of the database to drop.
         :return: Returns True if the operation is successful, False otherwise
         """
         database_name = Helper.format_database_name(database_name)
