@@ -427,7 +427,8 @@ class DatabaseWrapper:
         :param database_name: Name of the database to check
         """
         database_name = Helper.format_database_name(database_name)
-        sql           = 'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=%s' % database_name
+        sql           = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = " + database_name
+        sql = sql.replace('`','\'')
         try:
             self.__cur.execute(sql)
             self.__database_connector.commit()

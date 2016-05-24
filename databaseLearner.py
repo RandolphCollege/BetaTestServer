@@ -1,27 +1,30 @@
 from DatabaseManagementCode.databaseWrapper import DatabaseWrapper
 import json
+from datetime import datetime, timedelta
+import os
+
 
 class DataLearn(DatabaseWrapper):
     def __init__(self):
         host = "localhost"
-        user = "brad"
+        user = "root"
         password = "moxie100"
         database = (host, user, password)
 
         DatabaseWrapper.__init__(self, database=database)
 
-    def get_analysis_data(self, start_stamp, end_stamp):
+    def get_analysis_data(self, database_name, table_name, start_stamp, end_stamp):
         """
         @param data_type: str of the column selected, pass * for all data in table
         @param table_name: str of the name of the table
         @return: data
         """
 
-        if not self.table_exists(self.database_name, self.table_name):
+        if not self.table_exists(database_name, table_name):
             return []
 
-        if not self.fetch_from_database(database_name=self.database_name,
-                                        table_name=self.table_name,
+        if not self.fetch_from_database(database_name=database_name,
+                                        table_name=table_name,
                                         where=[['timestamp', '>=', start_stamp],
                                                ['timestamp', '<', end_stamp]],
                                         order_by=['timestamp', 'ASC']):
@@ -34,8 +37,65 @@ class DataLearn(DatabaseWrapper):
         else:
             return zip(*list(zip(*analysis_data)))
 
+    def get_room_analysis_data(self, database_name, table_name, start_stamp):
+        """
+        @param data_type: str of the column selected, pass * for all data in table
+        @param table_name: str of the name of the table
+        @return: data
+        """
+
+        if not self.table_exists(database_name, table_name):
+            return []
+
+        if not self.fetch_from_database(database_name=database_name,
+                                        table_name=table_name,
+                                        where=['start_window', '>=', start_stamp],
+                                        order_by=['start_window', 'ASC']):
+            return []
+        else:
+            analysis_data = self.fetchall()
+
+        if len(analysis_data) == 0:
+            return []
+        else:
+            return zip(*list(zip(*analysis_data)))
+
+    @staticmethod
+    def datetime_to_utc(timestamp):
+        """ Converts the given timestamp to UTC in ms. """
+
+        epoch = datetime.utcfromtimestamp(0)
+        delta = timestamp - epoch
+
+        return long(delta.total_seconds() * 1000)
+
+    @staticmethod
+    def utc_to_datetime(utc):
+        seconds = float(utc) / float(1000)
+        date = datetime.utcfromtimestamp(seconds)
+        return date
+
+    def get_stamp_window_from_utc(self, timestamp):
+        """
+        Gets the earliest window in utc numerical time
+        Windows are as follow:
+        Midnight <= time < Noon
+        Noon <= time < Next Day Midnight
+        :param timestamp: timestamp in numerical utc time
+        :return: 2 element list of [start_window, end_window]
+        """
+        timestamp = self.utc_to_datetime(timestamp)
+        return [self.datetime_to_utc(datetime(year=timestamp.year,
+                                              month=timestamp.month,
+                                              day=timestamp.day,
+                                              hour=0)),
+                self.datetime_to_utc(datetime(year=timestamp.year,
+                                              month=timestamp.month,
+                                              day=timestamp.day,
+                                              hour=0) + timedelta(days=1))]
+
     def get_tables(self, database):
-        all_tables = self.tables_list(database)
+        all_tables = self.tables_list('_' + database)
         table_list = [s for s in all_tables if s == "AnalysisRoomLocation" or s[:4] == 'data']
         return table_list
 
@@ -56,29 +116,47 @@ class DataLearn(DatabaseWrapper):
                 patient_list.remove(patient)
         return patient_list
 
-    def write_one_day(self, write_path, start_stamp, end_stamp):
-        f = open(write_path, 'w')
+    def write_one_day(self, time_stamp):
+        utc_time = self.datetime_to_utc(time_stamp)
+        start_stamp = self.get_stamp_window_from_utc(utc_time)[0]
+        end_stamp = self.get_stamp_window_from_utc(utc_time)[1]
 
-        database_list = self.get_database_names
+        current_dir = os.getcwd()
+        save_file_path = 'databaseSaves'
+        database_save_path = os.path.join(current_dir, save_file_path)
+        file_name = 'testfile'
+        if not os.path.exists(database_save_path):
+            os.makedirs(database_save_path)
+        file_path = os.path.join(database_save_path, file_name)
+        f = open(file_path, 'w')
+
+        database_list = self.get_database_names()
         for db in range(len(database_list)):
             f.write('Next_Database\n')
             f.write(database_list[db])
             f.write('\n')
 
+            current_database = '_' + database_list[db]
             table_list = self.get_tables(database_list[db])
             for tbl in range(len(table_list)):
                 f.write(table_list[tbl])
+                f.write('\n')
 
-                column_titles = self.table_columns(database_list[db], table_list[tbl])
-                column_types = [type(t) for t in column_titles]
-                data = self.get_analysis_data(start_stamp, end_stamp)
+                column_titles = self.table_columns(current_database, table_list[tbl])
+                column_types = [str(type(t)) for t in column_titles]
+                if table_list[tbl] != 'AnalysisRoomLocation':
+                    data = self.get_analysis_data(current_database, table_list[tbl], start_stamp, end_stamp)
+                else:
+                    data = self.get_room_analysis_data(current_database, table_list[tbl], start_stamp)
 
                 json_column_titles = json.dumps(column_titles)
                 json_types = json.dumps(column_types)
                 json_table = json.dumps(data)
 
                 f.write(json_column_titles)
+                f.write('\n')
                 f.write(json_types)
+                f.write('\n')
                 f.write(json_table)
                 f.write('\n')
 
@@ -86,8 +164,9 @@ class DataLearn(DatabaseWrapper):
         f = open(file_path, 'r')
         new_database = False
         new_table = False
+        fill_table = 0
         for line in f:
-            if line == 'New_Database\n':
+            if line == 'Next_Database\n':
                 new_database = True
                 new_table = False
                 continue
@@ -97,12 +176,13 @@ class DataLearn(DatabaseWrapper):
                 continue
 
             else:
+                line = line.rstrip('\n')
                 if new_database:
-                    current_database = line
+                    current_database = '_' + line
                     new_table = True
                     new_database = False
-                    if not self.database_exists(line):
-                        self.create_database(line)
+                    if not self.database_exists(current_database):
+                        self.create_database(current_database)
                     continue
 
                 if new_table:
@@ -124,3 +204,11 @@ class DataLearn(DatabaseWrapper):
                 elif fill_table == 3:
                     fill_table = 0
                     self.insert_into_database(current_database, current_table, current_columns, json.loads(line))
+
+data_grab = DataLearn()
+current_dir = os.getcwd()
+file_name = 'testfile'
+file_path = os.path.join(current_dir, file_name)
+
+data_grab.read_one_day(file_path)
+#data_grab.write_one_day(datetime.now() - timedelta(1))
