@@ -20,17 +20,33 @@ class Gps(BetaTestInterface):
 
         kml = simplekml.Kml()
 
+        previous_datetime = []
+        duplicates_skipped = 0
         # looping through the entirety of the input data...
         for i in range(len(data)):
             # convert to datetime
-            current_datetime = self.utc_to_datetime(data.item(i, 0))
-            # add point to the kml labeled with the 24 hour time and coordinates
-            pnt = kml.newpoint(name=str(current_datetime.time()),
-                               description="Latitude: %s\nLongitude: %s" % (data.item(i, 1), data.item(i, 2)),
-                               coords=[(data.item(i, 2), data.item(i, 1))])
+            current_datetime = self.utc_to_datetime(data[i][0])
+            if current_datetime != previous_datetime or data[i][1] != previous_lat or data[i][2] != previous_lon:
+                # add point to the kml labeled with the 24 hour time and coordinates
+                pnt = kml.newpoint(name=str(current_datetime.time()),
+                                   description="Latitude: %s\nLongitude: %s" % (data[i][1], data[i][2]),
+                                   coords=[(data[i][2], data[i][1])])
+                previous_datetime = current_datetime
+                previous_lat = data[i][1]
+                previous_lon = data[i][2]
+            else:
+                duplicates_skipped += 1
+
+        dup_message = "********GPSBetaTest********** \
+        \n\nduplicate data point rejected \
+        \n%s data points rejected\nPatient: %s\nDate: %s \
+        \n\n***********************" % (duplicates_skipped, self.patientID, previous_datetime.date)
+
+        if duplicates_skipped > 0:
+            print dup_message
 
         # get the date information for this data
-        start_utc = self.get_stamp_window_from_utc(data.item(0, 0))[0]
+        start_utc = self.get_stamp_window_from_utc(data[0][0])[0]
         start_datetime = self.utc_to_datetime(start_utc)
         start_date = start_datetime.date()
         data_day = calendar.day_name[start_datetime.weekday()]

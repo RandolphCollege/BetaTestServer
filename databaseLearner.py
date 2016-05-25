@@ -124,7 +124,7 @@ class DataLearn(DatabaseWrapper):
         current_dir = os.getcwd()
         save_file_path = 'databaseSaves'
         database_save_path = os.path.join(current_dir, save_file_path)
-        file_name = 'testfile4'
+        file_name = 'dataMay24'
         if not os.path.exists(database_save_path):
             os.makedirs(database_save_path)
         file_path = os.path.join(database_save_path, file_name)
@@ -202,19 +202,25 @@ class DataLearn(DatabaseWrapper):
 
                 elif fill_table == 2:
                     fill_table += 1
+                    current_column_types = json.loads(line)
                     if not self.table_exists(current_database, current_table):
                         self.create_table(current_database, current_table, current_columns, json.loads(line))
 
                 elif fill_table == 3:
                     fill_table = 0
                     if json.loads(line) != []:
-                        self.insert_into_database(current_database, current_table, current_columns, json.loads(line))
+                        if len(current_columns) == len(self.table_columns(current_database, current_table)):
+                            self.insert_into_database(current_database, current_table, current_columns, json.loads(line))
+                        else:
+                            self.drop_table(current_database, current_table)
+                            self.create_table(current_database, current_table, current_columns, current_column_types)
+                            self.insert_into_database(current_database, current_table, current_columns, json.loads(line))
         f.close()
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'testfile4'
+file_name = 'dataMay24'
 file_path = os.path.join(current_dir, file_name)
 
-data_grab.read_one_day(file_path)
-#data_grab.write_one_day(datetime.now() - timedelta(1))
+# data_grab.read_one_day(file_path)
+# data_grab.write_one_day(datetime.now() - timedelta(1))

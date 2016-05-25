@@ -41,8 +41,24 @@ class StepCount(BetaTestInterface):
         # create new array (data_in) to copy timestamps for each step in that timestamp's pull
         delta_utc = self.datetime_to_utc(start_datetime)
         data_in = []
+        previous_time = []
+        previous_count = []
+        duplicates_skipped = 0
         for i in range(len(data)):
-            data_in += data[i][1] * [data[i][0] - delta_utc]
+            if data[i][0] != previous_time or data[i][1] != previous_count:
+                data_in += data[i][1] * [data[i][0] - delta_utc]
+                previous_time = data[i][0]
+                previous_count = data[i][1]
+            else:
+                duplicates_skipped += 1
+                
+        dup_message = "********StepCountBetaTest********** \
+        \n\nduplicate data point rejected \
+        \n%s data points rejected\nPatient: %s\nDate: %s \
+        \n\n****************************" % (duplicates_skipped, self.patientID, start_date)
+
+        if duplicates_skipped > 0:
+            print dup_message
 
         # set up figure, set bin width and plot the histogram
         fig = plt.figure(1)
