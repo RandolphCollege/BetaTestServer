@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
+import math
+from collections import Counter
 import os
 
 
@@ -12,11 +14,12 @@ class StepCount(BetaTestInterface):
         self.patientID = patientID
 
     '''
-    # Expected input data as numpy array 2 columns
+    # Expected input data as array of tuples
     # column 1 as time stamp of data
     # column 2 as number of steps between current and last timestamp
     # code creates bin histogram of steps with 1 minute time windows
     # and returns the path of the save location
+    # skips duplicate entries
     '''
 
     def process_data(self, data):
@@ -51,32 +54,49 @@ class StepCount(BetaTestInterface):
                 previous_count = data[i][1]
             else:
                 duplicates_skipped += 1
-                
+
         dup_message = "********StepCountBetaTest********** \
         \n\nduplicate data point rejected \
         \n%s data points rejected\nPatient: %s\nDate: %s \
-        \n\n****************************" % (duplicates_skipped, self.patientID, start_date)
+        \n\n***********************************" % (duplicates_skipped, self.patientID, start_date)
 
         if duplicates_skipped > 0:
             print dup_message
 
         # set up figure, set bin width and plot the histogram
-        fig = plt.figure(1)
+        fig = plt.figure()
         bin_width = 900000
         # Set time axis label
         labels = [str(i) for i in range(24)]
         values = [86400000 * t / 24 for t in range(24)]
 
+        # plot empties
+        bin_borders = [86400000 * b / 96 for b in range(97)]
+        time_list, step_list = zip(*data)
+        null_data = []
+        counts = Counter(data_in)
+        top_count = counts.most_common(1)
+        if not top_count == []:
+            top_tuple = top_count[0]
+            ymax = top_tuple[1]
+        else:
+            ymax = 10
+        for n in range(1, len(bin_borders)):
+            if not any(bin_borders[n - 1] <= i - delta_utc < bin_borders[n] for i in time_list):
+                null_data += [bin_borders[n-1] + 450000] * int(math.ceil(ymax/50.))
+
         # AM Plot
         ax1 = fig.add_subplot(211)
-        ax1.hist(data_in, bins=np.arange(0, 43200000, bin_width))
-        ax1.set_xticks(values[:12])
-        ax1.set_xticklabels(labels[:12])
+        ax1.hist(data_in, facecolor='blue', bins=np.arange(0, 43200000 + bin_width, bin_width))
+        ax1.hist(null_data, facecolor='red', bins=np.arange(0, 43200000 + bin_width, bin_width))
+        ax1.set_xticks(values)
+        ax1.set_xticklabels(labels)
         ax1.set_xlim([0, 43200000])
 
         # PM Plot
         ax2 = fig.add_subplot(2, 1, 2, sharey=ax1)
-        ax2.hist(data_in, bins=np.arange(43200000, 86400000, bin_width))
+        ax2.hist(data_in, facecolor='blue', bins=np.arange(43200000, 86400000 + bin_width, bin_width))
+        ax2.hist(null_data, facecolor='red', bins=np.arange(43200000, 86400000 + bin_width, bin_width))
         ax2.set_xticks(values[12:])
         ax2.set_xticklabels(labels[12:])
         ax2.set_xlim([43200000, 86400000])

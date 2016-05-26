@@ -1,5 +1,6 @@
 from BetaTestInterface import BetaTestInterface
 import numpy
+import os
 
 
 class Gps(BetaTestInterface):
@@ -11,6 +12,7 @@ class Gps(BetaTestInterface):
     # latitude in the second, and longitude in the third. All data is expected to
     # be from the same day. Each data point in sent to a kml file labeled with the 24
     # hour time taken from the timestamp. The file path of the saved KML is returned
+    # skips duplicate entries
     '''
 
     def process_data(self, data):
@@ -37,10 +39,10 @@ class Gps(BetaTestInterface):
             else:
                 duplicates_skipped += 1
 
-        dup_message = "********GPSBetaTest********** \
+        dup_message = "***********GPSBetaTest************* \
         \n\nduplicate data point rejected \
         \n%s data points rejected\nPatient: %s\nDate: %s \
-        \n\n***********************" % (duplicates_skipped, self.patientID, previous_datetime.date)
+        \n\n**************************************" % (duplicates_skipped, self.patientID, previous_datetime.date())
 
         if duplicates_skipped > 0:
             print dup_message
@@ -53,7 +55,12 @@ class Gps(BetaTestInterface):
 
         # set the file path and save name
         file_name = "%s_%s_%s_GPSData.kml" % (str(self.patientID), str(start_date), str(data_day))
-        file_path = "C:\Users\Eric\Documents\Summer Research 2016\GPS Data\Eric Huber\\test\\%s" % file_name
+        current_dir = os.getcwd()
+        save_file_path = 'gpsSaves'
+        step_save_path = os.path.join(current_dir, save_file_path)
+        if not os.path.exists(step_save_path):
+            os.makedirs(step_save_path)
+        file_path = os.path.join(step_save_path, file_name)
         # save the kml file and return the location
         kml.save(file_path)
         return file_path

@@ -15,8 +15,10 @@ class DataLearn(DatabaseWrapper):
 
     def get_analysis_data(self, database_name, table_name, start_stamp, end_stamp):
         """
-        @param data_type: str of the column selected, pass * for all data in table
+        @param database_name: str of the database selected in form "_1234"
         @param table_name: str of the name of the table
+        @param start_stamp: utc timestamp of beginning of data to be retrieved (included)
+        @param end_stamp: utc timestamp of end of data to be retrieved (excluded)
         @return: data
         """
 
@@ -39,21 +41,30 @@ class DataLearn(DatabaseWrapper):
 
     def get_room_analysis_data(self, database_name, table_name, start_stamp):
         """
-        @param data_type: str of the column selected, pass * for all data in table
+        @param database_name: str of the database selected in form "_1234"
         @param table_name: str of the name of the table
+        @param start_stamp: utc timestamp of beginning of data to be retrieved (included)
         @return: data
         """
 
         if not self.table_exists(database_name, table_name):
             return []
 
-        if not self.fetch_from_database(database_name=database_name,
-                                        table_name=table_name,
-                                        where=['start_window', '>=', start_stamp],
-                                        order_by=['start_window', 'ASC']):
-            return []
-        else:
-            analysis_data = self.fetchall()
+        if table_name == 'AnalysisRoomLocation':
+            if not self.fetch_from_database(database_name=database_name,
+                                            table_name=table_name,
+                                            where=['start_window', '>=', start_stamp],
+                                            order_by=['start_window', 'ASC']):
+                return []
+            else:
+                analysis_data = self.fetchall()
+        elif table_name == 'profile':
+            if not self.fetch_from_database(database_name=database_name,
+                                            table_name=table_name,
+                                            order_by=['START', 'ASC']):
+                return []
+            else:
+                analysis_data = self.fetchall()
 
         if len(analysis_data) == 0:
             return []
@@ -96,7 +107,7 @@ class DataLearn(DatabaseWrapper):
 
     def get_tables(self, database):
         all_tables = self.tables_list('_' + database)
-        table_list = [s for s in all_tables if s == "AnalysisRoomLocation" or s[:4] == 'data']
+        table_list = [s for s in all_tables if s == "AnalysisRoomLocation" or s == 'profile' or s[:4] == 'data']
         return table_list
 
     def get_database_names(self):
@@ -124,7 +135,7 @@ class DataLearn(DatabaseWrapper):
         current_dir = os.getcwd()
         save_file_path = 'databaseSaves'
         database_save_path = os.path.join(current_dir, save_file_path)
-        file_name = 'dataMay24'
+        file_name = 'dataMay25'
         if not os.path.exists(database_save_path):
             os.makedirs(database_save_path)
         file_path = os.path.join(database_save_path, file_name)
@@ -144,10 +155,11 @@ class DataLearn(DatabaseWrapper):
 
                 column_titles = self.table_columns(current_database, table_list[tbl])
                 column_types = self.table_column_types(current_database, table_list[tbl])
-                if table_list[tbl] != 'AnalysisRoomLocation':
+                if table_list[tbl] != 'AnalysisRoomLocation' and table_list[tbl] != 'profile':
                     data = self.get_analysis_data(current_database, table_list[tbl], start_stamp, end_stamp)
                 else:
                     data = self.get_room_analysis_data(current_database, table_list[tbl], start_stamp)
+
 
                 json_column_titles = json.dumps(column_titles)
                 json_types = json.dumps(column_types)
@@ -219,8 +231,8 @@ class DataLearn(DatabaseWrapper):
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'dataMay24'
+file_name = 'dataMay25'
 file_path = os.path.join(current_dir, file_name)
 
-# data_grab.read_one_day(file_path)
-# data_grab.write_one_day(datetime.now() - timedelta(1))
+data_grab.read_one_day(file_path)
+#data_grab.write_one_day(datetime.now() - timedelta(1))
