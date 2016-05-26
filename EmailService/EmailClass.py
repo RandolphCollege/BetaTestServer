@@ -1,96 +1,65 @@
 import smtplib
 import base64
+import datetime
 
-filename = "/home/careeco/BetaTestServer/databaseLearner.py"
 
-# Read a file and encode it into base64 format
-fo = open(filename, "rb")
-filecontent = fo.read()
-encodedcontent = base64.b64encode(filecontent)  # base64
+class Email:
+    def __init__(self, receiver):
+        self.receiver = receiver
+        self.sender   = "cmsfm2016@outlook.com"
+        self.marker = "AUNIQUEMARKER"
 
-sender = 'fuckyou@outlook.com'
-receiver = 'erhuber@randolphcollege.edu '
+    def headers(self):
+        today = datetime.date.today()
+        part1  = "From: Daily Beta Test Metrics <%s>\n" % self.sender
+        part1 += "To:<%s>\n" % self.receiver
+        part1 += "Subject: %s\n" % today.strftime('%d, %b %Y Beta Test Metrics 2')
+        part1 += "MIME-Version: 1.0\n"
+        part1 += "Content-Type: multipart/mixed; boundary=%s\n" % self.marker
+        part1 += "--%s\n" % self.marker
+        return part1
 
-marker = "AUNIQUEMARKER"
+    def body_headers(self):
+        part2  = "Content-Type: text/plain\n"
+        part2 += "Content-Transfer-Encoding:8bit\n"
+        part2 += "\n"
+        part2 += "%s\n" % self.compose_body()
+        part2 += "--%s\n" %self.marker
+        return part2
 
-body ="""
-                                     .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..
-                            ..';cldkO00KXNNNNXXXKK000OOkkkkkxxxxxddoooddddddxxxxkkkkOO0XXKx:.
-                      .':ok0KXXXNXK0kxolc:;;,,,,,,,,,,,;;,,,''''''',,''..              .'lOXKd'
-                 .,lx00Oxl:,'............''''''...................    ...,;;'.             .oKXd.
-              .ckKKkc'...'',:::;,'.........'',;;::::;,'..........'',;;;,'.. .';;'.           'kNKc.
-           .:kXXk:.    ..       ..................          .............,:c:'...;:'.         .dNNx.
-          :0NKd,          .....''',,,,''..               ',...........',,,'',,::,...,,.        .dNNx.
-         .xXd.         .:;'..         ..,'             .;,.               ...,,'';;'. ...       .oNNo
-         .0K.         .;.              ;'              ';                      .'...'.           .oXX:
-        .oNO.         .                 ,.              .     ..',::ccc:;,..     ..                lXX:
-       .dNX:               ......       ;.                'cxOKK0OXWWWWWWWNX0kc.                    :KXd.
-     .l0N0;             ;d0KKKKKXK0ko:...              .l0X0xc,...lXWWWWWWWWKO0Kx'                   ,ONKo.
-   .lKNKl...'......'. .dXWN0kkk0NWWWWWN0o.            :KN0;.  .,cokXWWNNNNWNKkxONK: .,:c:.      .';;;;:lk0XXx;
-  :KN0l';ll:'.         .,:lodxxkO00KXNWWWX000k.       oXNx;:okKX0kdl:::;'',;coxkkd, ...'. ...'''.......',:lxKO:.
- oNNk,;c,'',.                      ...;xNNOc,.         ,d0X0xc,.     .dOd,           ..;dOKXK00000Ox:.   ..''dKO,
-'KW0,:,.,:..,oxkkkdl;'.                'KK'              ..           .dXX0o:'....,:oOXNN0d;.'. ..,lOKd.   .. ;KXl.
-;XNd,;  ;. l00kxoooxKXKx:..ld:         ;KK'                             .:dkO000000Okxl;.   c0;      :KK;   .  ;XXc
-'XXdc.  :. ..    '' 'kNNNKKKk,      .,dKNO.                                   ....       .'c0NO'      :X0.  ,.  xN0.
-.kNOc'  ,.      .00. ..''...      .l0X0d;.             'dOkxo;...                    .;okKXK0KNXx;.   .0X:  ,.  lNX'
- ,KKdl  .c,    .dNK,            .;xXWKc.                .;:coOXO,,'.......       .,lx0XXOo;...oNWNXKk:.'KX;  '   dNX.
-  :XXkc'....  .dNWXl        .';l0NXNKl.          ,lxkkkxo' .cK0.          ..;lx0XNX0xc.     ,0Nx'.','.kXo  .,  ,KNx.
-   cXXd,,;:, .oXWNNKo'    .'..  .'.'dKk;        .cooollox;.xXXl     ..,cdOKXXX00NXc.      'oKWK'     ;k:  .l. ,0Nk.
-    cXNx.  . ,KWX0NNNXOl'.           .o0Ooldk;            .:c;.':lxOKKK0xo:,.. ;XX:   .,lOXWWXd.      . .':,.lKXd.
-     lXNo    cXWWWXooNWNXKko;'..       .lk0x;       ...,:ldk0KXNNOo:,..       ,OWNOxO0KXXNWNO,        ....'l0Xk,
-     .dNK.   oNWWNo.cXK;;oOXNNXK0kxdolllllooooddxk00KKKK0kdoc:c0No        .'ckXWWWNXkc,;kNKl.          .,kXXk,
-      'KXc  .dNWWX;.xNk.  .kNO::lodxkOXWN0OkxdlcxNKl,..        oN0'..,:ox0XNWWNNWXo.  ,ONO'           .o0Xk;
-      .ONo    oNWWN0xXWK, .oNKc       .ONx.      ;X0.          .:XNKKNNWWWWNKkl;kNk. .cKXo.           .ON0;
-      .xNd   cNWWWWWWWWKOkKNXxl:,'...;0Xo'.....'lXK;...',:lxk0KNWWWWNNKOd:..   lXKclON0:            .xNk.
-      .dXd   ;XWWWWWWWWWWWWWWWWWWNNNNNWWNNNNNNNNNWWNNNNNNWWWWWNXKNNk;..        .dNWWXd.             cXO.
-      .xXo   .ONWNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNNK0ko:'..OXo          'l0NXx,              :KK,
-      .OXc    :XNk0NWXKNWWWWWWWWWWWWWWWWWWWWWNNNX00NNx:'..       lXKc.     'lONN0l.              .oXK:
-      .KX;    .dNKoON0;lXNkcld0NXo::cd0NNO:;,,'.. .0Xc            lXXo..'l0NNKd,.              .c0Nk,
-      :XK.     .xNX0NKc.cXXl  ;KXl    .dN0.       .0No            .xNXOKNXOo,.               .l0Xk;.
-     .dXk.      .lKWN0d::OWK;  lXXc    .OX:       .ONx.     . .,cdk0XNXOd;.   .'''....;c:'..;xKXx,
-     .0No         .:dOKNNNWNKOxkXWXo:,,;ONk;,,,,,;c0NXOxxkO0XXNXKOdc,.  ..;::,...;lol;..:xKXOl.
-     ,XX:             ..';cldxkOO0KKKXXXXXXXXXXKKKKK00Okxdol:;'..   .';::,..':llc,..'lkKXkc.
-     :NX'    .     ''            ..................             .,;:;,',;ccc;'..'lkKX0d;.
-     lNK.   .;      ,lc,.         ................        ..,,;;;;;;:::,....,lkKX0d:.
-    .oN0.    .'.      .;ccc;,'....              ....'',;;;;;;;;;;'..   .;oOXX0d:.
-    .dN0.      .;;,..       ....                ..''''''''....     .:dOKKko;.
-     lNK'         ..,;::;;,'.........................           .;d0X0kc'.
-     .xXO'                                                 .;oOK0x:.
-      .cKKo.                                    .,:oxkkkxk0K0xc'.
-        .oKKkc,.                         .';cok0XNNNX0Oxoc,.
-          .;d0XX0kdlc:;,,,',,,;;:clodkO0KK0Okdl:,'..
-              .,coxO0KXXXXXXXKK0OOxdoc:,..
-"""
-# Define the main headers.
-part1 = """From: A Silly Cunt <fuck@you.net>
-To: Another Silly Cunt <silly.cunt@gmail.com>
-Subject: Sending Attachement
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=%s
---%s
-""" % (marker, marker)
+    def compose_body(self):
+        body  = "\nAttached are your summary metrics. Please review and complete the\n"
+        body += "respective survey.\n"
+        body += "\n"
+        body += "Thank you,\n"
+        body += "The Functional Monitoring Team\n"
+        return body
 
-# Define the message action
-part2 = """Content-Type: text/plain
-Content-Transfer-Encoding:8bit
 
-%s
---%s
-""" % (body,marker)
+    def add_attachment(self, filename):
+        # Define the attachment section
+        fo = open(filename, "rb")
+        filecontent = fo.read()
+        encodedcontent = base64.b64encode(filecontent)
+        part3 = "Content-Type: multipart/mixed; name=\"%s\"\n" % filename
+        part3 += "Content-Transfer-Encoding:base64\n"
+        part3 += "Content-Disposition: attachment; filename=%s\n" % filename
+        part3 += "%s\n" % encodedcontent
+        part3 += "--%s--\n" % self.marker
+        return part3
 
-# Define the attachment section
-part3 = """Content-Type: multipart/mixed; name=\"%s\"
-Content-Transfer-Encoding:base64
-Content-Disposition: attachment; filename=%s
-
-%s
---%s--
-""" %(filename, filename, encodedcontent, marker)
-message = part1 + part2 + part3
-
-try:
-   smtpObj = smtplib.SMTP('localhost')
-   smtpObj.sendmail(sender, receiver, message)
-   print "Successfully sent email"
-except Exception:
-   print "Error: unable to send email"
+    def send_email(self):
+        part1 = self.headers()
+        part2 = self.body_headers()
+        part3 = self.add_attachment("main.py")
+        #part3 += self.add_attachment("EmailClass.py")
+        message = part1 + part2 + part3
+        print message
+        try:
+            smtpObj = smtplib.SMTP('localhost')
+            smtpObj.sendmail(self.sender, self.receiver, message)
+            print "Successfully sent email"
+        except Exception:
+            print "Error: unable to send email"
+email = Email("bbzylstra@randolphcollege.edu")
+email.send_email()

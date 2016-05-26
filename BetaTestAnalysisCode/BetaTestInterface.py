@@ -113,7 +113,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
         :return:
         """
-        ms_per_metric_window = 86400000*7
+        ms_per_metric_window = 86400000
         late_window  = self.get_latest_stamp_window()
         return [late_window[0] - ms_per_metric_window, late_window[1] - ms_per_metric_window]
 

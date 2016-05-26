@@ -47,9 +47,3 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
         patient_ids = self.get_patients_list()
         for patient_id in patient_ids:
             self.launch_beta_evals(patient_id)
-
-
-database = ("localhost", 'root', 'moxie100')
-tester = RunBetaTestAnalysis(database)
-tester.start()
-tester.join()
