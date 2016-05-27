@@ -2,15 +2,14 @@ import smtplib
 import base64
 import datetime
 
-
 class Email:
     def __init__(self, receiver):
         self.receiver = receiver
         self.sender   = "cmsfm2016@outlook.com"
-        self.marker = "AUNIQUEMARKER"
+        self.marker   = "AUNIQUEMARKER"
 
     def headers(self):
-        today = datetime.date.today()
+        today  = datetime.date.today()
         part1  = "From: Daily Beta Test Metrics <%s>\n" % self.sender
         part1 += "To:<%s>\n" % self.receiver
         part1 += "Subject: %s\n" % today.strftime('%d, %b %Y Beta Test Metrics 2')
@@ -61,5 +60,6 @@ class Email:
             print "Successfully sent email"
         except Exception:
             print "Error: unable to send email"
-email = Email("bbzylstra@randolphcollege.edu")
+
+email = Email("erhuber@randolphcollege.edu")
 email.send_email()

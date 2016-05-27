@@ -135,7 +135,7 @@ class DataLearn(DatabaseWrapper):
         current_dir = os.getcwd()
         save_file_path = 'databaseSaves'
         database_save_path = os.path.join(current_dir, save_file_path)
-        file_name = 'dataMay25'
+        file_name = 'dataMay26'
         if not os.path.exists(database_save_path):
             os.makedirs(database_save_path)
         file_path = os.path.join(database_save_path, file_name)
@@ -231,8 +231,8 @@ class DataLearn(DatabaseWrapper):
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'dataMay25'
+file_name = 'dataMay26'
 file_path = os.path.join(current_dir, file_name)
 
-data_grab.read_one_day(file_path)
-#data_grab.write_one_day(datetime.now() - timedelta(1))
+#data_grab.read_one_day(file_path)
+data_grab.write_one_day(datetime.now() - timedelta(1))

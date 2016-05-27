@@ -154,7 +154,8 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         window = self.get_yesterday_window()
         data = self.get_analysis_data(window[0], window[1])
         if data != []:
-            processed_data = self.process_data(data)
+            return self.process_data(data)
+        return []
 
     def run(self):
-        self.scheduled_job()
+        return self.scheduled_job()

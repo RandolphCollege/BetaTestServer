@@ -94,10 +94,10 @@ class RoomLocation(BetaTestInterface):
         file_name = "%s_%s_%s_RoomLocation.png" % (self.patientID, start_date, data_day)
         current_dir = os.getcwd()
         save_file_path = 'roomSaves'
-        gps_save_path = os.path.join(current_dir, save_file_path)
-        if not os.path.exists(gps_save_path):
-            os.makedirs(gps_save_path)
-        file_path = os.path.join(gps_save_path, file_name)
+        room_save_path = os.path.join(current_dir, save_file_path)
+        if not os.path.exists(room_save_path):
+            os.makedirs(room_save_path)
+        file_path = os.path.join(room_save_path, file_name)
 
         # set up variable for previously occupied room and lists to fill
         # with durations of room occupations and the corresponding rooms
