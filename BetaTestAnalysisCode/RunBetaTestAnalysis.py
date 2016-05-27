@@ -32,16 +32,16 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
     def launch_beta_evals(self, patient_id):
         betaGPStest = Gps(self.database, patient_id)
-        betaGPStest.start()
-        betaGPStest.join()
+        gpsPath = betaGPStest.run()
+
 
         betaStepstest = StepCount(self.database, patient_id)
-        betaStepstest.start()
-        betaStepstest.join()
+        stepPath = betaStepstest.run()
 
         betaRoomtest = RoomLocation(self.database, patient_id)
-        betaRoomtest.start()
-        betaRoomtest.join()
+        roomPath = betaRoomtest.run()
+
+        return [gpsPath, stepPath, roomPath]
 
     def run(self):
         patient_ids = self.get_patients_list()
