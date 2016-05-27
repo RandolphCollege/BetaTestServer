@@ -234,5 +234,5 @@ current_dir = os.getcwd()
 file_name = 'dataMay26'
 file_path = os.path.join(current_dir, file_name)
 
-#data_grab.read_one_day(file_path)
-data_grab.write_one_day(datetime.now() - timedelta(1))
+data_grab.read_one_day(file_path)
+#data_grab.write_one_day(datetime.now() - timedelta(1))
