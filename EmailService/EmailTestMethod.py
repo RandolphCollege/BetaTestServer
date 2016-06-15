@@ -35,6 +35,27 @@ def send_message(file_path_list):
     if file_path_list == []:
         return []
 
+    if file_path_list == ['msgString']:
+        msg = MIMEMultipart()
+        s = smtplib.SMTP('localhost')
+
+        toEmail, fromEmail = 'erhuber@randolphcollege.edu', 'func@you.net'
+        msg['Subject'] = 'FM Beta Data Verification'
+        msg['From'] = fromEmail
+        msg['To'] = toEmail
+
+        body = MIMEMultipart('alternative')
+        body_base = 'This is a test email:\n\n'
+
+        body.attach(MIMEText(body_base))
+        msg.attach(body)
+
+        toEmail = [toEmail]
+        toEmail += ['afella@randolphcollege.edu']
+        s.sendmail(fromEmail, toEmail, msg.as_string())
+        return []
+
+
     # make sure all files attached are supposed to go to the same person
     previous_dce = os.path.basename(file_path_list[0].split('_', 1)[0])
     for f in range(len(file_path_list)):
@@ -45,6 +66,7 @@ def send_message(file_path_list):
         previous_dce = current_dce
 
     recipient = email_dict[previous_dce]
+    recipient = 'ehuber1016@hotmail.com'
 
     # get the types of files that are included
     file_types = [os.path.basename(file_path_list[f].split('_')[-1]) for f in range(len(file_path_list))]
@@ -55,7 +77,7 @@ def send_message(file_path_list):
     toEmail, fromEmail = recipient, 'func@you.net'
     msg['Subject'] = 'FM Beta Data Verification'
     msg['From'] = fromEmail
-    msg['To'] = ', ' + toEmail
+    msg['To'] = toEmail
 
     body = MIMEMultipart('alternative')
     body_base = 'Please fill out the following surveys for the corresponding attached data:\n\n'
@@ -85,18 +107,8 @@ def send_message(file_path_list):
         part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(file_path_list[att]))
         msg.attach(part)
 
+    toEmail = [toEmail]
+    #toEmail += ['afella@randolphcollege.edu']
     s.sendmail(fromEmail, toEmail, msg.as_string())
 
 
-file_name = "george.netscher_2016-05-25_Wednesday_GPSData.kml"
-current_dir = os.path.dirname(os.getcwd())
-gps_file_path = 'gpsSaves'
-gps_save_path = os.path.join(current_dir, gps_file_path)
-gps_path = os.path.join(gps_save_path, file_name)
-
-step_file_name = 'george.netscher_2016-05-25_Wednesday_StepCount.png'
-step_file_path = 'stepSaves'
-step_save_path = os.path.join(current_dir, step_file_path)
-step_path = os.path.join(step_save_path, step_file_name)
-
-send_message([gps_path, step_path])

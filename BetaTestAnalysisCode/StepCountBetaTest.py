@@ -1,5 +1,7 @@
 from BetaTestInterface import BetaTestInterface
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
@@ -25,6 +27,10 @@ class StepCount(BetaTestInterface):
     def process_data(self, data):
         # turn interactive off so that the figure is not automatically displayed
         plt.ioff()
+
+        time, steps = zip(*data)
+        new_time = [t - self.fuck_up_hack for t in time]
+        data = zip(new_time, steps)
 
         # get the date information for this data
         start_utc = self.get_stamp_window_from_utc(data[0][0])[0]
@@ -64,6 +70,7 @@ class StepCount(BetaTestInterface):
             print dup_message
 
         # set up figure, set bin width and plot the histogram
+        plt.ioff()
         fig = plt.figure()
         bin_width = 900000
         # Set time axis label

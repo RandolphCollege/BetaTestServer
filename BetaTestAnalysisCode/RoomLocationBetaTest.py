@@ -1,5 +1,7 @@
 from BetaTestInterface import BetaTestInterface
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
@@ -13,7 +15,7 @@ class RoomLocation(BetaTestInterface):
         self.patientID = patientID
 
     '''
-    # Expected structured numpy array input as data. 2 columns.
+    # Expected array of tuples input as data.
     # First column as timestamp formatted as an integer or long
     # Second column as room location formatted as a string
     # Returns file save location of bar chart with location
@@ -23,7 +25,7 @@ class RoomLocation(BetaTestInterface):
         self.fetch_from_database(database_name =self.database_name,
                                  table_name    ='rooms',
                                  to_fetch      ='ROOM_NAME')
-        data = self.fetchall()
+        data  = self.fetchall()
         rooms = zip(*data)[0]
         rooms = list(rooms)
         rooms.append('Room Not Know')
@@ -51,29 +53,28 @@ class RoomLocation(BetaTestInterface):
 
     def filter_room_data(self, data):
         last_values_list = []
-        prior_room = ''
-        room_trans = 0
-        #data = [row[1] for row in data]
-        filtered_data = []
+        prior_room       = ''
+        room_trans       = 0
+        filtered_data    = []
+        data = [row[1] for row in data]
         for i in data:
             if i[1] != prior_room:
                 if len(last_values_list) >= 10:
-                    room_trans += 1
+                    room_trans      += 1
                     last_values_list = [i[1]]
-                    prior_room = i[1]
+                    prior_room       = i[1]
                     filtered_data.append(i)
                 else:
                     last_values_list = [i[1]]
-                    prior_room = i[1]
-                    filtered_data = filtered_data[:(len(filtered_data) - len(last_values_list)-1)]
+                    prior_room       = i[1]
+                    filtered_data    = filtered_data[:(len(filtered_data) - len(last_values_list)-1)]
             if i[1] == prior_room:
                 last_values_list.append(i[1])
                 filtered_data.append(i)
         return np.array(filtered_data)
 
     def process_data(self, data):
-        #data = self.filter_room_data(data)
-        #print data
+        data = self.filter_room_data(data)
         time_data = np.hsplit(data, 2)[0].tolist()
         time_data = map(lambda x: int(x[0]), time_data)
         room_data = np.hsplit(data, 2)[1]
@@ -82,17 +83,18 @@ class RoomLocation(BetaTestInterface):
         plt.ioff()
 
         # get the date information for this data
-        start_utc = self.get_stamp_window_from_utc(time_data[0])[0]
+        start_utc      = self.get_stamp_window_from_utc(time_data[0])[0]
+        end_utc        = self.get_stamp_window_from_utc(time_data[0])[1]
         start_datetime = self.utc_to_datetime(start_utc)
-        start_date = start_datetime.date()
-        data_day = calendar.day_name[start_datetime.weekday()]
+        start_date     = start_datetime.date()
+        data_day       = calendar.day_name[start_datetime.weekday()]
 
         # get the list of rooms in the house
         room_list = self.get_room_list()
 
         # set file name and save folder path
-        file_name = "%s_%s_%s_RoomLocation.png" % (self.patientID, start_date, data_day)
-        current_dir = os.getcwd()
+        file_name      = "%s_%s_%s_RoomLocation.png" % (self.patientID, start_date, data_day)
+        current_dir    = os.getcwd()
         save_file_path = 'roomSaves'
         room_save_path = os.path.join(current_dir, save_file_path)
         if not os.path.exists(room_save_path):
@@ -101,36 +103,52 @@ class RoomLocation(BetaTestInterface):
 
         # set up variable for previously occupied room and lists to fill
         # with durations of room occupations and the corresponding rooms
-        previous_room = 'No Connection'
-        previous_time = start_utc
+        previous_room  = 'No Connection'
+        previous_time  = start_utc
         room_durations = []
         room_locations = []
 
         # looping through the entire day's data...
-        for i in range(len(data)):
+        for i in range(len(time_data)):
             current_room = room_data[i]
-            current_duration = time_data[i] - previous_time
+            current_duration = time_data[i] - previous_time  # Get how long between this data point and the last
             if current_room != previous_room and current_duration <= 60000:
-                # if the room just changed,
+                # if the room just changed and it's been less than a minute since the last data point
+                #  if we have data in the first minute of the day, mark it rather than No Connection
                 if previous_room == 'No Connection':
                     previous_room = current_room
-                room_durations += [current_duration]
-                room_locations.append(previous_room)
-                previous_time = time_data[i]
-                previous_room = current_room
+                room_durations += [current_duration]  # Add the current duration to the time list
+                room_locations.append(previous_room)  # Add the last room to the room list paired with current duration
+                previous_room = current_room          # Set the previous room as the one we just looked at
             elif current_duration > 60000:
+                # If don't have data for one minute or more, we've lost connection
+                # Count the first minute to the previous room
                 room_durations += 60000
                 room_locations.append(previous_room)
+                # Then add a no connection time block until the next data point
                 room_durations += [current_duration - 60000]
                 room_locations.append('No Connection')
-                previous_time = time_data[i]
+                # And resume normal operations
                 previous_room = current_room
+            previous_time = time_data[i]  # Update when our last data point was
 
         # include end of day data missed by the for loop
-        room_durations += [time_data[-1] - previous_time]
-        room_locations.append(previous_room)
+        if end_utc - time_data[-1] > 60000:
+            room_durations += 60000
+            room_locations.append(room_data[-1])
+            room_durations += end_utc - time_data[-1] - 60000
+            room_locations.append('No Connection')
+        else:
+            room_durations += end_utc - time_data[-1]
+            room_locations.append(room_data[-1])
 
-        # Don't hate me for being a hack ...
+        """
+        # Don't hate me for being a hack now...
+        # This is actually pretty funny: we plot a set of stacked horizontal bar graphs
+        # such that every room has the entire day filled, but when the room isn't
+        # occupied, the color of the bar is white, and there's no border so it appears empty
+        """
+
         # Create lists for each time frame as full or empty
         null_dict = {}
         full_dict = {}
@@ -177,7 +195,7 @@ class RoomLocation(BetaTestInterface):
         plt.gcf().tight_layout()
 
         # set base of plot
-        left_bound = np.zeros(len(room_list))
+        left_bound  = np.zeros(len(room_list))
         left_bound += [time_data[0] - start_utc]
         ax.barh(ind, full_dict['full_0'], bar_width, color='b', align='center', edgecolor='none', left=left_bound)
         ax.barh(ind, null_dict['null_0'], bar_width, color='w', align='center', edgecolor='none', left=left_bound)
@@ -195,7 +213,7 @@ class RoomLocation(BetaTestInterface):
         plt.savefig(file_path)
         plt.close(fig)
         return file_path
-"""                                     .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..
+"""                                  .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..
                             ..';cldkO00KXNNNNXXXKK000OOkkkkkxxxxxddoooddddddxxxxkkkkOO0XXKx:.
                       .':ok0KXXXNXK0kxolc:;;,,,,,,,,,,,;;,,,''''''',,''..              .'lOXKd'
                  .,lx00Oxl:,'............''''''...................    ...,;;'.             .oKXd.

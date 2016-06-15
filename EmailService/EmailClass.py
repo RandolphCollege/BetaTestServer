@@ -34,7 +34,6 @@ class Email:
         body += "The Functional Monitoring Team\n"
         return body
 
-
     def add_attachment(self, filename):
         # Define the attachment section
         fo = open(filename, "rb")

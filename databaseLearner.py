@@ -4,6 +4,11 @@ from datetime import datetime, timedelta
 import os
 
 
+'''
+this class is used to pull data from one database and write it to a file
+or pull a file that's been written with this class and push the data
+into the current database. File is assumed to be in the current working directory
+'''
 class DataLearn(DatabaseWrapper):
     def __init__(self):
         host = "localhost"
@@ -60,8 +65,7 @@ class DataLearn(DatabaseWrapper):
                 analysis_data = self.fetchall()
         elif table_name == 'profile':
             if not self.fetch_from_database(database_name=database_name,
-                                            table_name=table_name,
-                                            order_by=['START', 'ASC']):
+                                            table_name=table_name):
                 return []
             else:
                 analysis_data = self.fetchall()
@@ -107,7 +111,8 @@ class DataLearn(DatabaseWrapper):
 
     def get_tables(self, database):
         all_tables = self.tables_list('_' + database)
-        table_list = [s for s in all_tables if s == "AnalysisRoomLocation" or s == 'profile' or s[:4] == 'data']
+        table_list = [s for s in all_tables if s == "AnalysisRoomLocation" or s == 'profile' or
+                      s[:4] == 'data' and s.split('.')[0][-3:] != 'LOG']
         return table_list
 
     def get_database_names(self):
@@ -127,7 +132,11 @@ class DataLearn(DatabaseWrapper):
                 patient_list.remove(patient)
         return patient_list
 
-    def write_one_day(self, time_stamp):
+    '''
+    writes one days worth of data from the given datetime into a txt file
+    in a format which can be read by the read_one_day method
+    '''
+    def write_one_day(self, time_stamp, file_name):
         utc_time = self.datetime_to_utc(time_stamp)
         start_stamp = self.get_stamp_window_from_utc(utc_time)[0]
         end_stamp = self.get_stamp_window_from_utc(utc_time)[1]
@@ -135,7 +144,7 @@ class DataLearn(DatabaseWrapper):
         current_dir = os.getcwd()
         save_file_path = 'databaseSaves'
         database_save_path = os.path.join(current_dir, save_file_path)
-        file_name = 'dataMay26'
+
         if not os.path.exists(database_save_path):
             os.makedirs(database_save_path)
         file_path = os.path.join(database_save_path, file_name)
@@ -143,6 +152,19 @@ class DataLearn(DatabaseWrapper):
 
         database_list = self.get_database_names()
         for db in range(len(database_list)):
+            # Next_Database indicates a new dce always then a new table
+            # Next_Table indicates a new table on the next line unless Next_Database
+            '''
+            Example:
+            Next_Database
+            _2772
+            dataHMDSC
+            column titles (json)
+            column types (json)
+            data (json)
+            Next_Table
+            dataMMGPS
+            '''
             f.write('Next_Database\n')
             f.write(database_list[db])
             f.write('\n')
@@ -160,7 +182,6 @@ class DataLearn(DatabaseWrapper):
                 else:
                     data = self.get_room_analysis_data(current_database, table_list[tbl], start_stamp)
 
-
                 json_column_titles = json.dumps(column_titles)
                 json_types = json.dumps(column_types)
                 json_table = json.dumps(data)
@@ -173,6 +194,10 @@ class DataLearn(DatabaseWrapper):
                 f.write('\nNext_Table\n')
         f.close()
 
+    '''
+    reads files written by above function and writes them into
+    the current server database in mysql
+    '''
     def read_one_day(self, file_path):
         f = open(file_path, 'r')
         new_database = False
@@ -231,8 +256,8 @@ class DataLearn(DatabaseWrapper):
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'dataMay26'
+file_name = 'dataJune14'
 file_path = os.path.join(current_dir, file_name)
 
 data_grab.read_one_day(file_path)
-#data_grab.write_one_day(datetime.now() - timedelta(1))
+#data_grab.write_one_day(datetime.now() - timedelta(days=1, hours=4), file_name)
