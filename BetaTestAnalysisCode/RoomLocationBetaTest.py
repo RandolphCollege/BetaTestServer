@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import calendar
-import datetime as dt
+import datetime
 import os
 import pickle
 
@@ -75,6 +75,12 @@ class RoomLocation(BetaTestInterface):
 
     def process_data(self, data):
         data = self.filter_room_data(data)
+        time, room = zip(*data)
+        if isinstance(time[0], datetime.datetime):
+            new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
+        else:
+            new_time = [t - self.fuck_up_hack for t in time]
+        data = zip(new_time, room)
         time_data = np.hsplit(data, 2)[0].tolist()
         time_data = map(lambda x: int(x[0]), time_data)
         room_data = np.hsplit(data, 2)[1]

@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import calendar
-import datetime as dt
+import datetime
 import math
 from collections import Counter
 import os
@@ -28,8 +28,12 @@ class StepCount(BetaTestInterface):
         # turn interactive off so that the figure is not automatically displayed
         plt.ioff()
 
+        # if the time data is not utc, make it so
         time, steps = zip(*data)
-        new_time = [t - self.fuck_up_hack for t in time]
+        if isinstance(time[0], datetime.datetime):
+            new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
+        else:
+            new_time = [t - self.fuck_up_hack for t in time]
         data = zip(new_time, steps)
 
         # get the date information for this data

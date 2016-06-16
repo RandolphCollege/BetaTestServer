@@ -73,7 +73,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
             print start_error + 'step count' + end_error
 
         if len(room_file) == 1:
-            file_list += [room_dir + '/' + room_file]
+            file_list += [room_dir + '/' + room_file[0]]
         elif len(room_file) > 1:
             print start_error + 'room location' + end_error
 
@@ -167,7 +167,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
         if hack_add == 'unmc.edu':
             hack_add = 'unmc'
 
-        if not hack_add == 'ucsf':
+        if not hack_add == 'randolph':
             for kill_file in range(len(file_path_list)):
                 os.remove(file_path_list[kill_file])
             return []
@@ -192,9 +192,9 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
         body = MIMEMultipart('alternative')
         if len(file_types) > 0:
-            body_base = 'Please fill out the following surveys for the corresponding attached data:\n\n'
+            body_base = '%s, please fill out the following surveys for the corresponding attached data for %s:\n\n' % (dce_dict[previous_dce], str(yesterday))
         else:
-            body_base = 'Please fill out the following surveys for %s:\n\n' % yesterday
+            body_base = '%s, please fill out the following surveys for %s:\n\n' % (dce_dict[previous_dce], str(yesterday))
 
         if any(t == 'GPSData.kml' for t in file_types):
             gps_request = 'GPS: %s\n' % survey_dict['GPS']
@@ -256,4 +256,4 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
         for patient_id in patient_ids:
             self.launch_beta_evals(patient_id)
             file_list = self.get_patient_files(patient_id)
-            self.email_beta_data(file_list, patient_id)
+            #self.email_beta_data(file_list, patient_id)

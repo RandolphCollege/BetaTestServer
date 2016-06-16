@@ -23,7 +23,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         multiprocessing.Process.__init__(self)
         DatabaseWrapper.__init__(self, database)
 
-        self.fuck_up_hack = 3600000 * 7
+        self.fuck_up_hack = 3600000 * 4
 
         self.database_name = '_' + patient_id
         self.analysis_name = analysis_name

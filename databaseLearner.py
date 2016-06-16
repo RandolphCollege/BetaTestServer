@@ -256,7 +256,7 @@ class DataLearn(DatabaseWrapper):
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'dataJune14'
+file_name = 'dataJune15'
 file_path = os.path.join(current_dir, file_name)
 
 data_grab.read_one_day(file_path)

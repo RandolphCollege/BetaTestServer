@@ -3,7 +3,7 @@ import numpy
 import simplekml
 import calendar
 import os
-
+import datetime
 
 class Gps(BetaTestInterface):
     def __init__(self, database, patientID):
@@ -18,17 +18,40 @@ class Gps(BetaTestInterface):
     '''
 
     def process_data(self, data):
+        # check the format of the timestamps and change to utc if necessary
+        time, lat, lon = zip(*data)
+        if isinstance(time[0], datetime.datetime):
+            new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
+        else:
+            new_time = [t - self.fuck_up_hack for t in time]
+        data = zip(new_time, lat, lon)
+
+        # get the date information for this data
+        start_utc = self.get_stamp_window_from_utc(data[0][0])[0]
+        start_datetime = self.utc_to_datetime(start_utc)
+        start_date = start_datetime.date()
+        data_day = calendar.day_name[start_datetime.weekday()]
+
         # simplekml module allows for easy conversion of data to kml file type
         kml = simplekml.Kml()
 
-        time, lat, lon = zip(*data)
-        new_time = [t - self.fuck_up_hack for t in time]
-        data = zip(new_time, lat, lon)
+        # list of colors to be distributed based on time
+        # violet - blue - yellowgreen - orange - red - magenta
+        color_list = ['ffe22b8a', 'ffffff00', 'ff2fffad',
+                      'ff00a5ff', 'ff0000ff', 'ffff00ff']
+        # break the day up into even time intervals-- one for each color in the color list
+        color_change_times = [86400000/len(color_list)*(i+1) for i in range(len(color_list)+1)]
 
+        change_index = 0
         previous_datetime = []
+        previous_lat = []
+        previous_lon = []
         duplicates_skipped = 0
         # looping through the entirety of the input data...
         for i in range(len(data)):
+            # if the current time is passed the current color's time range, bump the color up to the next in the list
+            if data[i][0] - start_utc > color_change_times[change_index]:
+                change_index += 1
             # convert to datetime
             current_datetime = self.utc_to_datetime(data[i][0])
             # if there is anything novel about this datapoint
@@ -36,7 +59,13 @@ class Gps(BetaTestInterface):
                 # add point to the kml labeled with the 24 hour time and coordinates
                 pnt = kml.newpoint(name=current_datetime.time().strftime("%H:%M:%S"),
                                    description="Latitude: %s\nLongitude: %s" % (data[i][1], data[i][2]),
-                                   coords=[(data[i][2], data[i][1])])
+                                   coords=[(data[i][2], data[i][1])],)
+                # change the color and icon of the point
+                pnt.style.iconstyle.color = color_list[change_index]
+                pnt.style.iconstyle.icon.href = 'http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png'
+                pnt.style.iconstyle.scale = 0.75
+
+                # keep track of the previous data point that was entered
                 previous_datetime = current_datetime
                 previous_lat = data[i][1]
                 previous_lon = data[i][2]
@@ -53,12 +82,6 @@ class Gps(BetaTestInterface):
         # if there were any duplicates, print the error message
         if duplicates_skipped > 0:
             print dup_message
-
-        # get the date information for this data
-        start_utc = self.get_stamp_window_from_utc(data[0][0])[0]
-        start_datetime = self.utc_to_datetime(start_utc)
-        start_date = start_datetime.date()
-        data_day = calendar.day_name[start_datetime.weekday()]
 
         # set the file path and save name
         file_name = "%s_%s_%s_GPSData.kml" % (str(self.patientID), str(start_date), str(data_day))
