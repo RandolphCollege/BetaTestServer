@@ -79,6 +79,24 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
         return file_list
 
+    @staticmethod
+    def expunge_old_files():
+        current_dir = os.getcwd()
+        dir_list = []
+
+        dir_list += [os.path.join(current_dir, 'gpsSaves')]
+        dir_list += [os.path.join(current_dir, 'stepSaves')]
+        dir_list += [os.path.join(current_dir, 'roomSaves')]
+
+        for folder in dir_list:
+            for delete_file in os.listdir(folder):
+                file_path = os.path.join(folder, delete_file)
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                except Exception as e:
+                    print(e)
+
     '''
     email_beta_data has a hardcoded dictionary for dce to email
     as well as dce to name. The method takes in a list of file paths
@@ -92,7 +110,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
         email_dict = {'2747': 'kschenk@randolphcollege.edu',
                       '2749': 'savannah.carroll@ucsf.edu',
                       '2750': 'Reilly.Walker@ucsf.edu',
-                      '2751': 'tamara.braley@unmc.edu',
+                      '2751': 'tiffany.bence@unmc.edu',
                       '2762': 'Michael.Schaffer@ucsf.edu',
                       '2769': 'afella@randolphcollege.edu',
                       '2770': 'sbonasera@unmc.edu',
@@ -103,7 +121,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
                       '2775': 'stucker@randolphcollege.edu',
                       '2776': 'gishen@uchicago.edu',
                       '2777': 'Kasia.Gawlas@ucsf.edu',
-                      '2780': 'denise.kreski@unmc.edu',
+                      '2780': 'karen.backus@unmc.edu',
                       '2781': 'paige.scholer@unmc.edu',
                       '2782': 'ifortune@unmc.edu',
                       'george.netscher': 'gnetscher@gmail.com',
@@ -114,7 +132,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
         dce_dict = {'2747': 'Katrin Schenk',
                     '2749': 'Savannah',
                     '2750': 'Reilly',
-                    '2751': 'Tami',
+                    '2751': 'Tiffany',
                     '2762': 'Michael Schaffer',
                     '2769': 'Alex Fella',
                     '2770': 'Steve',
@@ -126,7 +144,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
                     '2776': 'Galen',
                     '2777': 'Kasia',
                     '2779': 'Test 5',
-                    '2780': 'Denise',
+                    '2780': 'Karen',
                     '2781': 'Paige',
                     '2782': 'Ileana',
                     'george.netscher': 'George',
@@ -146,12 +164,13 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
         # make sure data is being passed in
         if file_path_list != []:
-            # make sure all files attached are supposed to go to the same person
             previous_dce = os.path.basename(file_path_list[0].split('_', 1)[0])
+            # first verify that we know where this persons files are supposed to go
             if previous_dce not in email_dict:
                 print 'no email on file for %s' % previous_dce
                 return []
 
+            # then check to ensure that all files go to the same person
             for f in range(len(file_path_list)):
                 current_dce = os.path.basename(file_path_list[f].split('_', 1)[0])
                 if email_dict[current_dce] != email_dict[previous_dce]:
@@ -159,6 +178,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
                     return []
                 previous_dce = current_dce
 
+        # dUct-TAPe
         hack_add = email_dict[previous_dce].split('@')[-1]
         if hack_add == 'randolphcollege.edu' or hack_add == 'uchicago.edu':
             hack_add = 'randolph'
@@ -167,53 +187,69 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
         if hack_add == 'unmc.edu':
             hack_add = 'unmc'
 
+        # Eliminate all files that don't go to the specified group without emailing
         if not hack_add == 'randolph':
             for kill_file in range(len(file_path_list)):
                 os.remove(file_path_list[kill_file])
             return []
 
+        # Grab the email address to send to based on the dce
         recipient = email_dict[previous_dce]
-        #recipient = 'afella@randolphcollege.edu'
-        yesterday = datetime.now() - timedelta(days=1)
+        recipient = 'erhuber@randolphcollege.edu'
+
+        # Define a date object to let the beta testers know what day the data is for
+        yesterday = datetime.now() - timedelta(days=1, hours=4)
         yesterday = yesterday.date()
 
         # get the types of files that are included
         file_types = [os.path.basename(file_path_list[f].split('_')[-1]) for f in range(len(file_path_list))]
 
+        # Initiate the email through MIME and login to the BetaTest email
+        # Logging in to a real email address isn't strictly necessary, but it bypasses
+        # Most security measures that gmail and other services have against phishing
         msg = MIMEMultipart()
         s = smtplib.SMTP('smtp.gmail.com', 587)
         s.starttls()
         s.login(host_email, 'Django1138')
 
+        # Set up the header and return address
         from_email = host_email
-        msg['Subject'] = '%s FM Beta Data Verification for %s' % (dce_dict[previous_dce], str(yesterday))
+        msg['Subject'] = 'FM Beta Data Verification for %s' % str(yesterday)
         msg['From'] = from_email
         msg['To'] = recipient
 
+        # Set up message depending on which files are going to be attached
         body = MIMEMultipart('alternative')
+
+        # If there are any files to attach...
         if len(file_types) > 0:
             body_base = '%s, please fill out the following surveys for the corresponding attached data for %s:\n\n' % (dce_dict[previous_dce], str(yesterday))
         else:
             body_base = '%s, please fill out the following surveys for %s:\n\n' % (dce_dict[previous_dce], str(yesterday))
 
+        # If there is a GPS file to attach...
         if any(t == 'GPSData.kml' for t in file_types):
             gps_request = 'GPS: %s\n' % survey_dict['GPS']
         else:
             gps_request = 'We have no GPS data for you\nGPS: %s\n' % survey_dict['GPS']
 
+        # If there is a Step Count file to attach...
         if any(t == 'StepCount.png' for t in file_types):
             step_request = 'Step Count: %s\n' % survey_dict['StepCount']
         else:
             step_request = 'We have no Step Count data for you\nStep Count: %s\n' % survey_dict['StepCount']
 
+        # If there is a Room Location file to attach...
         if any(t == 'RoomLocation.png' for t in file_types):
             room_request = 'Room Location: %s\n' % survey_dict['RoomLocation']
         else:
             room_request = ''
 
+        # Write each section to the body of the email
         body.attach(MIMEText(body_base + gps_request + step_request + room_request))
         msg.attach(body)
 
+        # Attach the appropriate files to the email
         for att in range(len(file_path_list)):
             part = MIMEBase('application', "octet-stream")
             part.set_payload(open(file_path_list[att], "rb").read())
@@ -221,12 +257,12 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
             part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(file_path_list[att]))
             msg.attach(part)
 
+        # Define where the email will actually go (earlier, we only set up the header)
         to_email = [recipient]
         to_email += ['afella@randolphcollege.edu']
-        s.sendmail(from_email, to_email, msg.as_string())
 
-        #for kill_file in range(len(file_path_list)):
-        #    os.remove(file_path_list[kill_file])
+        # Send the email
+        s.sendmail(from_email, to_email, msg.as_string())
 
     '''
     launch_beta_evals creates an instance of each data analysis class
@@ -252,8 +288,10 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
     calls each function in appropriate order to process all data for the day
     '''
     def run(self):
+        self.expunge_old_files()
         patient_ids = self.get_patients_list()
         for patient_id in patient_ids:
+
             self.launch_beta_evals(patient_id)
             file_list = self.get_patient_files(patient_id)
             #self.email_beta_data(file_list, patient_id)

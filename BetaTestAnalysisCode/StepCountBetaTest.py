@@ -56,12 +56,14 @@ class StepCount(BetaTestInterface):
         data_in = []
         previous_time = []
         previous_count = []
+        step_total = 0
         duplicates_skipped = 0
         for i in range(len(data)):
             if data[i][0] != previous_time or data[i][1] != previous_count:
                 data_in += data[i][1] * [data[i][0] - delta_utc]
                 previous_time = data[i][0]
                 previous_count = data[i][1]
+                step_total += data[i][1]
             else:
                 duplicates_skipped += 1
 
@@ -77,12 +79,17 @@ class StepCount(BetaTestInterface):
         plt.ioff()
         fig = plt.figure()
         bin_width = 900000
+        if not 86400000 % bin_width == 0:
+            error_message = "The day must be split into even and complete bins"
+            print "****************StepCountError*******************\n\n %s\n\n " \
+                  "*************************************************" % error_message
+
         # Set time axis label
         labels = [str(i) for i in range(24)]
         values = [86400000 * t / 24 for t in range(24)]
 
         # plot empties
-        bin_borders = [86400000 * b / 96 for b in range(97)]
+        bin_borders = [bin_width*b for b in range(86400000/bin_width+1)]
         time_list, step_list = zip(*data)
         null_data = []
         counts = Counter(data_in)
@@ -112,8 +119,13 @@ class StepCount(BetaTestInterface):
         ax2.set_xticklabels(labels[12:])
         ax2.set_xlim([43200000, 86400000])
 
+        # adjust y axis if there are few steps for the day
+        if ymax < 50:
+            ax1.set_yticks(range(0, 60, 10))
+            ax2.set_yticks(range(0, 60, 10))
+
         # Set labels on the graph
-        plot_title ='%s\'s steps on %s, %s' % (self.patientID, str(data_day), str(start_date))
+        plot_title ='total steps: %s\n%s\'s steps on %s, %s ' % (step_total, self.patientID, str(data_day), str(start_date))
         ax1.set_title(plot_title)
         ax2.set_xlabel('Time (each rectangle represents 15 minutes)', fontsize=18)
         fig.text(.028, .525, 'Steps', rotation='vertical', fontsize=18)

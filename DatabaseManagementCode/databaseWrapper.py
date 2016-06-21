@@ -438,6 +438,11 @@ class DatabaseWrapper:
                 return self.__reconnect_and_retry(e, self.database_exists, database_name)
             Helper.print_database_error('looking for database %s' % database_name, sql, [], e)
             return False
+        except TypeError:
+            print "************SKETCHY DATABASE PROTOCOL**********************" \
+                  "\n\nCould not find database: %s\n\n" \
+                  "***********************************************************" % database_name
+            return False
 
     def create_database(self, database_name):
         """
