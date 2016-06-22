@@ -85,7 +85,7 @@ class RoomLocation(BetaTestInterface):
     def process_data(self, data):
         #data = self.filter_room_data(data)
         times, room_data = zip(*data)
-        timeout_time = 60000 * 15
+        timeout_time = 60000 * 1
         #if isinstance(time[0], datetime.datetime):
         #    new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
         #else:
@@ -124,6 +124,7 @@ class RoomLocation(BetaTestInterface):
         # with durations of room occupations and the corresponding rooms
         previous_room  = 'No Connection'
         previous_time  = start_utc
+        time_in = start_utc
         room_durations = []
         room_locations = []
         duplicate_count = 0
@@ -131,29 +132,38 @@ class RoomLocation(BetaTestInterface):
         # looping through the entire day's data...
         for i in range(len(time_data)):
             current_room = room_data[i]
-            current_duration = time_data[i] - previous_time  # Get how long between this data point and the last
-            if current_room != previous_room and current_duration <= timeout_time:
+            current_time = time_data[i]
+            current_duration = current_time - previous_time  # Get how long between this data point and the last
+
+            check_timeout = current_time - time_in <= timeout_time
+            if current_room != previous_room and check_timeout:
                 # if the room just changed and it's been less than a minute since the last data point
                 #  if we have data in the first minute of the day, mark it rather than No Connection
                 if previous_room == 'No Connection':
                     previous_room = current_room
+
                 room_durations += [current_duration]  # Add the current duration to the time list
                 room_locations.append(previous_room)  # Add the last room to the room list paired with current duration
                 previous_room = current_room          # Set the previous room as the one we just looked at
-            elif current_duration > timeout_time:
+                previous_time = current_time
+
+            elif not check_timeout:
                 # If don't have data for one minute or more, we've lost connection
                 # Count the first minute to the previous room
                 room_durations += [timeout_time]
                 room_locations.append(previous_room)
+
                 # Then add a no connection time block until the next data point
                 room_durations += [current_duration - timeout_time]
                 room_locations.append('No Connection')
+
                 # And resume normal operations
                 previous_room = current_room
+                previous_time = current_time
             elif current_duration == 0:
                 duplicate_count += 1
                 continue
-            previous_time = time_data[i]  # Update when our last data point was
+            time_in = current_time  # Update when our last data point was
 
         # include end of day data missed by the for loop
         if end_utc - time_data[-1] > timeout_time:
