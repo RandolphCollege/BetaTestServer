@@ -85,7 +85,7 @@ class RoomLocation(BetaTestInterface):
     def process_data(self, data):
         #data = self.filter_room_data(data)
         times, room_data = zip(*data)
-        timeout_time = 60000
+        timeout_time = 60000 * 15
         #if isinstance(time[0], datetime.datetime):
         #    new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
         #else:
@@ -152,6 +152,7 @@ class RoomLocation(BetaTestInterface):
                 previous_room = current_room
             elif current_duration == 0:
                 duplicate_count += 1
+                continue
             previous_time = time_data[i]  # Update when our last data point was
 
         # include end of day data missed by the for loop
@@ -176,6 +177,11 @@ class RoomLocation(BetaTestInterface):
         print self.patientID
         print room_locations[-1]
         print room_durations[-1]
+        data_length = sum(room_durations)
+        day_length = end_utc - start_utc
+        print data_length
+        print day_length
+        print float(data_length)/day_length*100
 
         """
         # Don't hate me for being a hack now...
