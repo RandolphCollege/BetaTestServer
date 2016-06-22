@@ -23,7 +23,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         multiprocessing.Process.__init__(self)
         DatabaseWrapper.__init__(self, database)
 
-        self.fuck_up_hack = 3600000 * 4
+        self.fuck_up_hack = 3600000 * 0
 
         self.database_name = '_' + patient_id
         self.analysis_name = analysis_name
@@ -105,7 +105,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
 
     def get_latest_stamp_window(self):
-        latest_time = datetime.now()
+        latest_time = datetime.now() - timedelta(hours=4)
         latest_time = self.datetime_to_utc(latest_time)
         return self.get_stamp_window_from_utc(latest_time)
 
@@ -115,7 +115,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
         :return:
         """
-        ms_per_metric_window = 86400000 * 1 - self.fuck_up_hack
+        ms_per_metric_window = 86400000 * 2 - self.fuck_up_hack
         late_window  = self.get_latest_stamp_window()
         return [late_window[0] - ms_per_metric_window, late_window[1] - ms_per_metric_window]
 

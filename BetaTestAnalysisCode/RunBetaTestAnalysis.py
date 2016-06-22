@@ -121,6 +121,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
                       '2775': 'stucker@randolphcollege.edu',
                       '2776': 'gishen@uchicago.edu',
                       '2777': 'Kasia.Gawlas@ucsf.edu',
+                      '2779': 'afella@randolphcollege.edu',
                       '2780': 'karen.backus@unmc.edu',
                       '2781': 'paige.scholer@unmc.edu',
                       '2782': 'ifortune@unmc.edu',
@@ -195,7 +196,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
         # Grab the email address to send to based on the dce
         recipient = email_dict[previous_dce]
-        recipient = 'erhuber@randolphcollege.edu'
+        #recipient = 'afella@randolphcollege.edu'
 
         # Define a date object to let the beta testers know what day the data is for
         yesterday = datetime.now() - timedelta(days=1, hours=4)

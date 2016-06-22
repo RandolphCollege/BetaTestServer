@@ -28,7 +28,7 @@ class RoomLocation(BetaTestInterface):
         data  = self.fetchall()
         rooms = zip(*data)[0]
         rooms = list(rooms)
-        rooms.append('Room Not Know')
+        rooms.append('RNK')
         rooms.append('No Connection')
         return rooms
 
@@ -49,7 +49,16 @@ class RoomLocation(BetaTestInterface):
         if len(metric_data) == 0:
             return []
         else:
-            return np.array(pickle.loads(zip(*list(zip(*metric_data)))[0][0])[0])
+            go_one = pickle.loads(zip(*list(zip(*metric_data)))[0][0])[0]
+            step_one = zip(*metric_data)
+            step_two = list(step_one)
+            step_three = zip(*step_two)
+            step_four = step_three[0]
+            step_five = step_four[0]
+            step_six = pickle.loads(step_five)
+            step_seven = step_six[0]
+            step_eight = step_seven[0]
+            return np.array(step_seven)
 
     def filter_room_data(self, data):
         last_values_list = []
@@ -74,16 +83,20 @@ class RoomLocation(BetaTestInterface):
         return np.array(filtered_data)
 
     def process_data(self, data):
-        data = self.filter_room_data(data)
-        time, room = zip(*data)
-        if isinstance(time[0], datetime.datetime):
-            new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
-        else:
-            new_time = [t - self.fuck_up_hack for t in time]
-        data = zip(new_time, room)
-        time_data = np.hsplit(data, 2)[0].tolist()
-        time_data = map(lambda x: int(x[0]), time_data)
-        room_data = np.hsplit(data, 2)[1]
+        #data = self.filter_room_data(data)
+        times, room_data = zip(*data)
+        timeout_time = 60000
+        #if isinstance(time[0], datetime.datetime):
+        #    new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
+        #else:
+        #    new_time = [t - self.fuck_up_hack for t in time]
+        #data = zip(new_time, room)
+        #time_data = np.hsplit(data, 1)[0].tolist()
+        times = list(times)
+        room_data = list(room_data)
+        time_data = map(lambda x: int(x), times)
+        start_time = self.datetime_to_utc(datetime.datetime.now()-datetime.timedelta(2, hours=4))
+        start_time = self.get_stamp_window_from_utc(start_time)[0]
 
         # turn interactive off so that the figure is not automatically displayed
         plt.ioff()
@@ -113,12 +126,13 @@ class RoomLocation(BetaTestInterface):
         previous_time  = start_utc
         room_durations = []
         room_locations = []
+        duplicate_count = 0
 
         # looping through the entire day's data...
         for i in range(len(time_data)):
             current_room = room_data[i]
             current_duration = time_data[i] - previous_time  # Get how long between this data point and the last
-            if current_room != previous_room and current_duration <= 60000:
+            if current_room != previous_room and current_duration <= timeout_time:
                 # if the room just changed and it's been less than a minute since the last data point
                 #  if we have data in the first minute of the day, mark it rather than No Connection
                 if previous_room == 'No Connection':
@@ -126,27 +140,42 @@ class RoomLocation(BetaTestInterface):
                 room_durations += [current_duration]  # Add the current duration to the time list
                 room_locations.append(previous_room)  # Add the last room to the room list paired with current duration
                 previous_room = current_room          # Set the previous room as the one we just looked at
-            elif current_duration > 60000:
+            elif current_duration > timeout_time:
                 # If don't have data for one minute or more, we've lost connection
                 # Count the first minute to the previous room
-                room_durations += 60000
+                room_durations += [timeout_time]
                 room_locations.append(previous_room)
                 # Then add a no connection time block until the next data point
-                room_durations += [current_duration - 60000]
+                room_durations += [current_duration - timeout_time]
                 room_locations.append('No Connection')
                 # And resume normal operations
                 previous_room = current_room
+            elif current_duration == 0:
+                duplicate_count += 1
             previous_time = time_data[i]  # Update when our last data point was
 
         # include end of day data missed by the for loop
-        if end_utc - time_data[-1] > 60000:
-            room_durations += 60000
+        if end_utc - time_data[-1] > timeout_time:
+            room_durations += [timeout_time]
             room_locations.append(room_data[-1])
-            room_durations += end_utc - time_data[-1] - 60000
+            room_durations += [end_utc - time_data[-1] - timeout_time]
             room_locations.append('No Connection')
         else:
-            room_durations += end_utc - time_data[-1]
+            room_durations += [end_utc - time_data[-1]]
             room_locations.append(room_data[-1])
+
+
+        dup_message = "********RoomLocationBetaTest********** \
+        \n\nduplicate data point rejected \
+        \n%s data points rejected\nPatient: %s\nDate: %s \
+        \n\n***************************************" % (duplicate_count, self.patientID, start_date)
+
+        if duplicate_count > 0:
+            print dup_message
+
+        print self.patientID
+        print room_locations[-1]
+        print room_durations[-1]
 
         """
         # Don't hate me for being a hack now...
