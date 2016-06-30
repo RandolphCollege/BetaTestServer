@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import calendar
 import datetime
 import os
-import pickle
 
 
 class RoomLocation(BetaTestInterface):
@@ -83,20 +82,27 @@ class RoomLocation(BetaTestInterface):
         return np.array(filtered_data)
 
     def process_data(self, data):
-        #data = self.filter_room_data(data)
         times, room_data = zip(*data)
         timeout_time = 60000 * 1
-        #if isinstance(time[0], datetime.datetime):
-        #    new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
-        #else:
-        #    new_time = [t - self.fuck_up_hack for t in time]
-        #data = zip(new_time, room)
-        #time_data = np.hsplit(data, 1)[0].tolist()
+
         times = list(times)
         room_data = list(room_data)
         time_data = map(lambda x: int(x), times)
-        start_time = self.datetime_to_utc(datetime.datetime.now()-datetime.timedelta(2, hours=4))
-        start_time = self.get_stamp_window_from_utc(start_time)[0]
+        if not isinstance(time_data[0], long):
+            new_time = [self.sql_datetime_to_utc(t) - self.fuck_up_hack for t in time_data]
+        else:
+            new_time = [t - self.fuck_up_hack for t in time_data]
+
+        '''
+        Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
+        new_time = []
+        for t in time_data:
+            if not isinstance(t, long):
+                new_time += [self.sql_datetime_to_utc(t) - self.fuck_up_hack]
+            else:
+                new_time += [t - self.fuck_up_hack]
+        '''
+        time_data = new_time
 
         # turn interactive off so that the figure is not automatically displayed
         plt.ioff()
@@ -129,14 +135,16 @@ class RoomLocation(BetaTestInterface):
         room_locations = []
         duplicate_count = 0
 
+        print self.patientID
+
         # looping through the entire day's data...
         for i in range(len(time_data)):
             current_room = room_data[i]
             current_time = time_data[i]
             current_duration = current_time - previous_time  # Get how long between this data point and the last
 
-            check_timeout = current_time - time_in <= timeout_time
-            if current_room != previous_room and check_timeout:
+            timeout = current_time - time_in >= timeout_time
+            if current_room != previous_room and not timeout:
                 # if the room just changed and it's been less than a minute since the last data point
                 #  if we have data in the first minute of the day, mark it rather than No Connection
                 if previous_room == 'No Connection':
@@ -144,37 +152,44 @@ class RoomLocation(BetaTestInterface):
 
                 room_durations += [current_duration]  # Add the current duration to the time list
                 room_locations.append(previous_room)  # Add the last room to the room list paired with current duration
+                if previous_room not in room_list:
+                    room_list.append(previous_room)
                 previous_room = current_room          # Set the previous room as the one we just looked at
                 previous_time = current_time
 
-            elif not check_timeout:
+            elif timeout:
                 # If don't have data for one minute or more, we've lost connection
                 # Count the first minute to the previous room
-                room_durations += [timeout_time]
+                room_durations += [time_in - previous_time + timeout_time]
                 room_locations.append(previous_room)
+                if previous_room not in room_list:
+                    room_list.append(previous_room)
 
                 # Then add a no connection time block until the next data point
-                room_durations += [current_duration - timeout_time]
+                room_durations += [current_time - time_in - timeout_time]
                 room_locations.append('No Connection')
 
                 # And resume normal operations
                 previous_room = current_room
                 previous_time = current_time
-            elif current_duration == 0:
+            elif time_in == 0:
                 duplicate_count += 1
                 continue
             time_in = current_time  # Update when our last data point was
 
         # include end of day data missed by the for loop
+        current_duration = time_data[-1]-previous_time
         if end_utc - time_data[-1] > timeout_time:
-            room_durations += [timeout_time]
+            room_durations += [current_duration + timeout_time]
             room_locations.append(room_data[-1])
             room_durations += [end_utc - time_data[-1] - timeout_time]
             room_locations.append('No Connection')
         else:
-            room_durations += [end_utc - time_data[-1]]
+            room_durations += [current_duration + (end_utc - time_data[-1])]
             room_locations.append(room_data[-1])
 
+        if room_data[-1] not in room_list:
+            room_list.append(previous_room)
 
         dup_message = "********RoomLocationBetaTest********** \
         \n\nduplicate data point rejected \
@@ -184,15 +199,6 @@ class RoomLocation(BetaTestInterface):
         if duplicate_count > 0:
             print dup_message
 
-        print self.patientID
-        print room_locations[-1]
-        print room_durations[-1]
-        data_length = sum(room_durations)
-        day_length = end_utc - start_utc
-        print data_length
-        print day_length
-        print float(data_length)/day_length*100
-
         """
         # Don't hate me for being a hack now...
         # This is actually pretty funny: we plot a set of stacked horizontal bar graphs
@@ -201,8 +207,12 @@ class RoomLocation(BetaTestInterface):
         """
 
         # Create lists for each time frame as full or empty
-        null_dict = {}
-        full_dict = {}
+        null_keys = ['null_%s' % n for n in range(len(room_locations))]
+        full_keys = ['full_%s' % n for n in range(len(room_locations))]
+        null_dict = dict.fromkeys(null_keys)
+        full_dict = dict.fromkeys(full_keys)
+        null_dict.update(dict(null_dict))
+        full_dict.update(dict(full_dict))
 
         # looping through each room location and duration pair...
         for n in range(len(room_locations)):
@@ -246,19 +256,16 @@ class RoomLocation(BetaTestInterface):
         plt.gcf().tight_layout()
 
         # set base of plot
-        left_bound  = np.zeros(len(room_list))
-        left_bound += [time_data[0] - start_utc]
-        ax.barh(ind, full_dict['full_0'], bar_width, color='b', align='center', edgecolor='none', left=left_bound)
-        ax.barh(ind, null_dict['null_0'], bar_width, color='w', align='center', edgecolor='none', left=left_bound)
+        left_bound = np.zeros(len(room_list))
 
         # looping through remaining time frames
-        for p in range(1, len(null_dict)):
-            time_add = room_durations[p - 1]
-            left_bound += time_add
+        for p in range(len(null_dict)):
+            time_add = room_durations[p]
             ax.barh(ind, full_dict['full_%s' % p], bar_width, color='b',
                     align='center', edgecolor='none', left=left_bound)
             ax.barh(ind, null_dict['null_%s' % p], bar_width, color='w',
                     align='center', edgecolor='none', left=left_bound)
+            left_bound += time_add
 
         # save the plot and return the save location
         plt.savefig(file_path)

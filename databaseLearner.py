@@ -75,6 +75,30 @@ class DataLearn(DatabaseWrapper):
         else:
             return zip(*list(zip(*analysis_data)))
 
+    def get_config_analysis_data(self, database_name, table_name):
+        """
+        @param database_name: str of the database selected in form "_1234"
+        @param table_name: str of the name of the table
+        @param start_stamp: utc timestamp of beginning of data to be retrieved (included)
+        @param end_stamp: utc timestamp of end of data to be retrieved (excluded)
+        @return: data
+        """
+
+        if not self.table_exists(database_name, table_name):
+          return []
+
+        if not self.fetch_from_database(database_name=database_name,
+                                        table_name=table_name,
+                                        ):
+            return []
+        else:
+            analysis_data = self.fetchall()
+
+        if len(analysis_data) == 0:
+            return []
+        else:
+            return zip(*list(zip(*analysis_data)))
+
     @staticmethod
     def datetime_to_utc(timestamp):
         """ Converts the given timestamp to UTC in ms. """
@@ -115,6 +139,11 @@ class DataLearn(DatabaseWrapper):
                       s[:4] == 'data' and s.split('.')[0][-3:] != 'LOG']
         return table_list
 
+    def get_config_tables(self, database):
+        all_tables = self.tables_list(database)
+        table_list = [s for s in all_tables]
+        return table_list
+
     def get_database_names(self):
         if not self.fetch_from_database(database_name='config',
                                         table_name='caregiverPatientPairs',
@@ -151,6 +180,7 @@ class DataLearn(DatabaseWrapper):
         f = open(file_path, 'w')
 
         database_list = self.get_database_names()
+        database_list = ['config'] + database_list
         for db in range(len(database_list)):
             # Next_Database indicates a new dce always then a new table
             # Next_Table indicates a new table on the next line unless Next_Database
@@ -169,18 +199,25 @@ class DataLearn(DatabaseWrapper):
             f.write(database_list[db])
             f.write('\n')
 
-            current_database = '_' + database_list[db]
-            table_list = self.get_tables(database_list[db])
+            if not database_list[db] == 'config':
+                current_database = '_' + database_list[db]
+                table_list = self.get_tables(database_list[db])
+            else:
+                table_list = self.get_config_tables(database_list[db])
+                current_database = database_list[db]
+
             for tbl in range(len(table_list)):
                 f.write(table_list[tbl])
                 f.write('\n')
 
                 column_titles = self.table_columns(current_database, table_list[tbl])
                 column_types = self.table_column_types(current_database, table_list[tbl])
-                if table_list[tbl] != 'AnalysisRoomLocation' and table_list[tbl] != 'profile':
+                if table_list[tbl] != 'AnalysisRoomLocation' and table_list[tbl] != 'profile' and current_database != 'config':
                     data = self.get_analysis_data(current_database, table_list[tbl], start_stamp, end_stamp)
-                else:
+                elif current_database != 'config':
                     data = self.get_room_analysis_data(current_database, table_list[tbl], start_stamp)
+                else:
+                    data = self.get_config_analysis_data(current_database, table_list[tbl])
 
                 json_column_titles = json.dumps(column_titles)
                 json_types = json.dumps(column_types)
@@ -192,6 +229,7 @@ class DataLearn(DatabaseWrapper):
                 f.write('\n')
                 f.write(json_table)
                 f.write('\nNext_Table\n')
+
         f.close()
 
     '''
@@ -219,9 +257,13 @@ class DataLearn(DatabaseWrapper):
             else:
                 line = line.rstrip('\n')
                 if new_database:
-                    current_database = '_' + line
+                    if not line == 'config':
+                        current_database = '_' + line
+                    else:
+                        current_database = line
                     new_table = True
                     new_database = False
+                    print current_database
                     if not self.database_exists(current_database):
                         self.create_database(current_database)
                     continue
@@ -256,7 +298,7 @@ class DataLearn(DatabaseWrapper):
 
 data_grab = DataLearn()
 current_dir = os.getcwd()
-file_name = 'dataJune15'
+file_name = 'Re-dataJune23'
 file_path = os.path.join(current_dir, file_name)
 
 data_grab.read_one_day(file_path)

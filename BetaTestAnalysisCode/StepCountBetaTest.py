@@ -30,10 +30,20 @@ class StepCount(BetaTestInterface):
 
         # if the time data is not utc, make it so
         time, steps = zip(*data)
-        if isinstance(time[0], datetime.datetime):
-            new_time = [self.datetime_to_utc(t) - self.fuck_up_hack for t in time]
+        if not isinstance(time[0], long):
+            new_time = [self.sql_datetime_to_utc(t) - self.fuck_up_hack for t in time]
         else:
             new_time = [t - self.fuck_up_hack for t in time]
+
+        '''
+        Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
+        new_time = []
+        for t in time:
+            if not isinstance(t, long):
+                new_time += [self.sql_datetime_to_utc(t) - self.fuck_up_hack]
+            else:
+                new_time += [t - self.fuck_up_hack]
+        '''
         data = zip(new_time, steps)
 
         # get the date information for this data

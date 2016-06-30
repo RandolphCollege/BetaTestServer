@@ -57,6 +57,10 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         date = datetime.utcfromtimestamp(seconds)
         return date
 
+    #@staticmethod
+    def sql_datetime_to_utc(self, timestamp):
+        return self.datetime_to_utc(timestamp)
+
     def get_stamp_window_from_utc(self, timestamp):
         """
         Gets the earliest window in utc numerical time
@@ -115,7 +119,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
         :return:
         """
-        ms_per_metric_window = 86400000 * 2 - self.fuck_up_hack
+        ms_per_metric_window = 86400000 * 1 - self.fuck_up_hack
         late_window  = self.get_latest_stamp_window()
         return [late_window[0] - ms_per_metric_window, late_window[1] - ms_per_metric_window]
 

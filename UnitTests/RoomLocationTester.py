@@ -21,14 +21,14 @@ class RoomLocationTester(unittest.TestCase):
         self.data = np.column_stack((times, locations))
 
     def testRoomLocation(self):
-        roomlocationClass = RoomLocation(self.database, '2750')
+        roomlocationClass = RoomLocation(self.database, '2779')
         roomlocationClass.start()
         roomlocationClass.join()
     def testRoomGrab(self):
-        roomlocationClass = RoomLocation(self.database, '2750')
+        roomlocationClass = RoomLocation(self.database, '2779')
         print roomlocationClass.get_room_list()
     def testDataGrab(self):
-        roomlocationClass = RoomLocation(self.database, '2750')
+        roomlocationClass = RoomLocation(self.database, '2779')
         window = roomlocationClass.get_yesterday_window()
         data = roomlocationClass.get_analysis_data(window[0], window[1])
         print data
