@@ -8,6 +8,7 @@ import datetime
 import math
 from collections import Counter
 import os
+import csv
 
 
 class StepCount(BetaTestInterface):
@@ -115,16 +116,17 @@ class StepCount(BetaTestInterface):
 
         # AM Plot
         ax1 = fig.add_subplot(211)
-        ax1.hist(data_in, facecolor='blue', bins=np.arange(0, 43200000 + bin_width, bin_width))
-        ax1.hist(null_data, facecolor='red', bins=np.arange(0, 43200000 + bin_width, bin_width))
+        n_am, bin_am, hist = ax1.hist(data_in, facecolor='blue', bins=np.arange(0, 43200000 + bin_width, bin_width))
+
+        null_am, null_bin_am, hust = ax1.hist(null_data, facecolor='red', bins=np.arange(0, 43200000 + bin_width, bin_width))
         ax1.set_xticks(values)
         ax1.set_xticklabels(labels)
         ax1.set_xlim([0, 43200000])
 
         # PM Plot
         ax2 = fig.add_subplot(2, 1, 2, sharey=ax1)
-        ax2.hist(data_in, facecolor='blue', bins=np.arange(43200000, 86400000 + bin_width, bin_width))
-        ax2.hist(null_data, facecolor='red', bins=np.arange(43200000, 86400000 + bin_width, bin_width))
+        n_pm, bin_pm, hist = ax2.hist(data_in, facecolor='blue', bins=np.arange(43200000, 86400000 + bin_width, bin_width))
+        null_pm, null_bin_pm, hist = ax2.hist(null_data, facecolor='red', bins=np.arange(43200000, 86400000 + bin_width, bin_width))
         ax2.set_xticks(values[12:])
         ax2.set_xticklabels(labels[12:])
         ax2.set_xlim([43200000, 86400000])
@@ -143,4 +145,25 @@ class StepCount(BetaTestInterface):
         # Save and close figure and return save location
         plt.savefig(file_path)
         plt.close()
+        total_n = np.append(n_am, n_pm)
+        null_n = np.append(null_am, null_pm)
+        total_bin = np.append(bin_am, bin_pm)
+        total_save_path = os.path.join(current_dir, 'totalSteps')
+        filepath = os.path.join(total_save_path, "%s_%s_%s_StepCount.csv" % (self.patientID, start_date, data_day))
+        with open(filepath, 'wb') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',')
+            writer.writerow(['Bin Start Time', 'Steps', 'Valid'])
+            for index, step in enumerate(total_n):
+                start_time = (total_bin[index]/86400000.0)*24
+                steps = step
+                if steps != 0.:
+                    valid = 1
+                elif null_n[index] == 0:
+                    valid = 1
+                else:
+                    valid = 0
+                writer.writerow([start_time, int(steps), valid])
+
+
+
         return file_path
