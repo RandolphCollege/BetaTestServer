@@ -323,7 +323,7 @@ class TableQuery:
 class DatabaseWrapper:
     __CONNECTION_ERRORS__ = { 0, 2006 }
 
-    def __init__(self, database=None, host='127.0.0.1', port=3306, user='', password='', remote_host='', remote_port=22,
+    def __init__(self, database=None, host='127.0.0.1', port=8001, user='', password='', remote_host='', remote_port=22,
                  forward_host='127.0.0.1', forward_port=-1, remote_user='', remote_password=''):
         """
         Initialize a database wrapper. Can be open locally (ex: DatabaseWrapper(user='brad', password='moxie100'))
@@ -819,6 +819,7 @@ class DatabaseWrapper:
         # Execute the query
         sql    = table_query.format_fetch_statement()
         values = table_query.get_values()
+        print(sql)
         try:
             self.__cur.execute(sql, values)
             self.__database_connector.commit()

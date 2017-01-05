@@ -11,8 +11,8 @@ import os
 
 
 class StepCount(BetaTestInterface):
-    def __init__(self, database, patientID):
-        BetaTestInterface.__init__(self, database, patientID, 'StepCountbeta', 'dataHMDSC')
+    def __init__(self, database, patientID, day):
+        BetaTestInterface.__init__(self, database, patientID, 'StepCountbeta', 'dataHMDSC', day)
         self.patientID = patientID
 
     '''
@@ -36,7 +36,7 @@ class StepCount(BetaTestInterface):
             new_time = [t - self.fuck_up_hack for t in time]
 
         '''
-        Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
+        #Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
         new_time = []
         for t in time:
             if not isinstance(t, long):

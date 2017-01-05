@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 import calendar
 import datetime
 import os
+import pickle
 
 
 class RoomLocation(BetaTestInterface):
-    def __init__(self, database, patientID):
-        BetaTestInterface.__init__(self, database, patientID, 'RoomLocationBeta', 'AnalysisRoomLocation')
+    def __init__(self, database, patientID, day):
+        BetaTestInterface.__init__(self, database, patientID, 'RoomLocationBeta', 'AnalysisRoomLocation', day)
         self.patientID = patientID
 
     '''
@@ -21,9 +22,10 @@ class RoomLocation(BetaTestInterface):
     # on the y axis and time on the x axis
     '''
     def get_room_list(self):
-        self.fetch_from_database(database_name =self.database_name,
-                                 table_name    ='rooms',
-                                 to_fetch      ='ROOM_NAME')
+        print('in room list')
+        self.fetch_from_database(database_name = self.database_name,
+                                 table_name ='rooms',
+                                 to_fetch ='ROOM_NAME')
         data  = self.fetchall()
         rooms = zip(*data)[0]
         rooms = list(rooms)
@@ -46,6 +48,7 @@ class RoomLocation(BetaTestInterface):
             metric_data = self.fetchall()
 
         if len(metric_data) == 0:
+            print(metric_data)
             return []
         else:
             go_one = pickle.loads(zip(*list(zip(*metric_data)))[0][0])[0]
@@ -89,12 +92,13 @@ class RoomLocation(BetaTestInterface):
         room_data = list(room_data)
         time_data = map(lambda x: int(x), times)
         if not isinstance(time_data[0], long):
-            new_time = [self.sql_datetime_to_utc(t) - self.fuck_up_hack for t in time_data]
+            new_time = [t - self.fuck_up_hack for t in time_data] #[self.sql_datetime_to_utc(t) - self.fuck_up_hack for t in time_data]
         else:
             new_time = [t - self.fuck_up_hack for t in time_data]
 
+
+        #Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
         '''
-        Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
         new_time = []
         for t in time_data:
             if not isinstance(t, long):
@@ -240,8 +244,8 @@ class RoomLocation(BetaTestInterface):
         ax.set_title(plot_title)
 
         # Set time axis labels
-        labels = [str(i) for i in range(24)]
-        values = [86400000 * t / 24 for t in range(24)]
+        labels = ['19','20','21','22','23','0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18']
+        values = [86400000* t/24 for t in range(24)]
         ax.set_xticks(values)
         ax.set_xticklabels(labels)
         ax.set_xlim([0, 86400000])
@@ -271,50 +275,3 @@ class RoomLocation(BetaTestInterface):
         plt.savefig(file_path)
         plt.close(fig)
         return file_path
-"""                                  .....'',;;::cccllllllllllllcccc:::;;,,,''...'',,'..
-                            ..';cldkO00KXNNNNXXXKK000OOkkkkkxxxxxddoooddddddxxxxkkkkOO0XXKx:.
-                      .':ok0KXXXNXK0kxolc:;;,,,,,,,,,,,;;,,,''''''',,''..              .'lOXKd'
-                 .,lx00Oxl:,'............''''''...................    ...,;;'.             .oKXd.
-              .ckKKkc'...'',:::;,'.........'',;;::::;,'..........'',;;;,'.. .';;'.           'kNKc.
-           .:kXXk:.    ..       ..................          .............,:c:'...;:'.         .dNNx.
-          :0NKd,          .....''',,,,''..               ',...........',,,'',,::,...,,.        .dNNx.
-         .xXd.         .:;'..         ..,'             .;,.               ...,,'';;'. ...       .oNNo
-         .0K.         .;.              ;'              ';                      .'...'.           .oXX:
-        .oNO.         .                 ,.              .     ..',::ccc:;,..     ..                lXX:
-       .dNX:               ......       ;.                'cxOKK0OXWWWWWWWNX0kc.                    :KXd.
-     .l0N0;             ;d0KKKKKXK0ko:...              .l0X0xc,...lXWWWWWWWWKO0Kx'                   ,ONKo.
-   .lKNKl...'......'. .dXWN0kkk0NWWWWWN0o.            :KN0;.  .,cokXWWNNNNWNKkxONK: .,:c:.      .';;;;:lk0XXx;
-  :KN0l';ll:'.         .,:lodxxkO00KXNWWWX000k.       oXNx;:okKX0kdl:::;'',;coxkkd, ...'. ...'''.......',:lxKO:.
- oNNk,;c,'',.                      ...;xNNOc,.         ,d0X0xc,.     .dOd,           ..;dOKXK00000Ox:.   ..''dKO,
-'KW0,:,.,:..,oxkkkdl;'.                'KK'              ..           .dXX0o:'....,:oOXNN0d;.'. ..,lOKd.   .. ;KXl.
-;XNd,;  ;. l00kxoooxKXKx:..ld:         ;KK'                             .:dkO000000Okxl;.   c0;      :KK;   .  ;XXc
-'XXdc.  :. ..    '' 'kNNNKKKk,      .,dKNO.                                   ....       .'c0NO'      :X0.  ,.  xN0.
-.kNOc'  ,.      .00. ..''...      .l0X0d;.             'dOkxo;...                    .;okKXK0KNXx;.   .0X:  ,.  lNX'
- ,KKdl  .c,    .dNK,            .;xXWKc.                .;:coOXO,,'.......       .,lx0XXOo;...oNWNXKk:.'KX;  '   dNX.
-  :XXkc'....  .dNWXl        .';l0NXNKl.          ,lxkkkxo' .cK0.          ..;lx0XNX0xc.     ,0Nx'.','.kXo  .,  ,KNx.
-   cXXd,,;:, .oXWNNKo'    .'..  .'.'dKk;        .cooollox;.xXXl     ..,cdOKXXX00NXc.      'oKWK'     ;k:  .l. ,0Nk.
-    cXNx.  . ,KWX0NNNXOl'.           .o0Ooldk;            .:c;.':lxOKKK0xo:,.. ;XX:   .,lOXWWXd.      . .':,.lKXd.
-     lXNo    cXWWWXooNWNXKko;'..       .lk0x;       ...,:ldk0KXNNOo:,..       ,OWNOxO0KXXNWNO,        ....'l0Xk,
-     .dNK.   oNWWNo.cXK;;oOXNNXK0kxdolllllooooddxk00KKKK0kdoc:c0No        .'ckXWWWNXkc,;kNKl.          .,kXXk,
-      'KXc  .dNWWX;.xNk.  .kNO::lodxkOXWN0OkxdlcxNKl,..        oN0'..,:ox0XNWWNNWXo.  ,ONO'           .o0Xk;
-      .ONo    oNWWN0xXWK, .oNKc       .ONx.      ;X0.          .:XNKKNNWWWWNKkl;kNk. .cKXo.           .ON0;
-      .xNd   cNWWWWWWWWKOkKNXxl:,'...;0Xo'.....'lXK;...',:lxk0KNWWWWNNKOd:..   lXKclON0:            .xNk.
-      .dXd   ;XWWWWWWWWWWWWWWWWWWNNNNNWWNNNNNNNNNWWNNNNNNWWWWWNXKNNk;..        .dNWWXd.             cXO.
-      .xXo   .ONWNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNNK0ko:'..OXo          'l0NXx,              :KK,
-      .OXc    :XNk0NWXKNWWWWWWWWWWWWWWWWWWWWWNNNX00NNx:'..       lXKc.     'lONN0l.              .oXK:
-      .KX;    .dNKoON0;lXNkcld0NXo::cd0NNO:;,,'.. .0Xc            lXXo..'l0NNKd,.              .c0Nk,
-      :XK.     .xNX0NKc.cXXl  ;KXl    .dN0.       .0No            .xNXOKNXOo,.               .l0Xk;.
-     .dXk.      .lKWN0d::OWK;  lXXc    .OX:       .ONx.     . .,cdk0XNXOd;.   .'''....;c:'..;xKXx,
-     .0No         .:dOKNNNWNKOxkXWXo:,,;ONk;,,,,,;c0NXOxxkO0XXNXKOdc,.  ..;::,...;lol;..:xKXOl.
-     ,XX:             ..';cldxkOO0KKKXXXXXXXXXXKKKKK00Okxdol:;'..   .';::,..':llc,..'lkKXkc.
-     :NX'    .     ''            ..................             .,;:;,',;ccc;'..'lkKX0d;.
-     lNK.   .;      ,lc,.         ................        ..,,;;;;;;:::,....,lkKX0d:.
-    .oN0.    .'.      .;ccc;,'....              ....'',;;;;;;;;;;'..   .;oOXX0d:.
-    .dN0.      .;;,..       ....                ..''''''''....     .:dOKKko;.
-     lNK'         ..,;::;;,'.........................           .;d0X0kc'.
-     .xXO'                                                 .;oOK0x:.
-      .cKKo.                                    .,:oxkkkxk0K0xc'.
-        .oKKkc,.                         .';cok0XNNNX0Oxoc,.
-          .;d0XX0kdlc:;,,,',,,;;:clodkO0KK0Okdl:,'..
-              .,coxO0KXXXXXXXKK0OOxdoc:,..
-"""

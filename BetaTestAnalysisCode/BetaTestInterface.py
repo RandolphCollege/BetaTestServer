@@ -11,7 +11,7 @@ import time
 
 class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
-    def __init__(self, database, patient_id, analysis_name, table_name):
+    def __init__(self, database, patient_id, analysis_name, table_name, day):
         '''
         Interface for running any beta test analysis code
         :param database: tuple containing (host, username, password) for connecting to database
@@ -23,8 +23,8 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         multiprocessing.Process.__init__(self)
         DatabaseWrapper.__init__(self, database)
 
-        self.fuck_up_hack = 3600000 * 0
-
+        self.fuck_up_hack = 3600000 * 5
+        self.day = day
         self.database_name = '_' + patient_id
         self.analysis_name = analysis_name
         self.table_name    = table_name
@@ -45,7 +45,7 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
     @staticmethod
     def datetime_to_utc(timestamp):
         """ Converts the given timestamp to UTC in ms. """
-
+        print(timestamp)
         epoch      = datetime.utcfromtimestamp(0)
         delta      = timestamp-epoch
 
@@ -117,9 +117,10 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
         """
         Create a list of timestamp windows -24 from the latest window to insure all data has arrived.
 
-        :return:
+        :return:0
+
         """
-        ms_per_metric_window = 86400000 * 1 - self.fuck_up_hack
+        ms_per_metric_window = 86400000 * self.day - self.fuck_up_hack
         late_window  = self.get_latest_stamp_window()
         return [late_window[0] - ms_per_metric_window, late_window[1] - ms_per_metric_window]
 
@@ -158,7 +159,9 @@ class BetaTestInterface(multiprocessing.Process, DatabaseWrapper):
 
     def scheduled_job(self):
         window = self.get_yesterday_window()
+        print(window)
         data = self.get_analysis_data(window[0], window[1])
+        print('second', window[0], window[1])
         if data != []:
             return self.process_data(data)
         return []

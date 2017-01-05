@@ -6,8 +6,8 @@ import os
 import datetime
 
 class Gps(BetaTestInterface):
-    def __init__(self, database, patientID):
-        BetaTestInterface.__init__(self, database, patientID, 'GPSbeta', 'dataMMGPS')
+    def __init__(self, database, patientID, day):
+        BetaTestInterface.__init__(self, database, patientID, 'GPSbeta', 'dataMMGPS', day)
         self.patientID = patientID
     '''
     # Expected array of tuples as data with utc timestamps in the first column,
@@ -25,15 +25,15 @@ class Gps(BetaTestInterface):
         else:
             new_time = [t - self.fuck_up_hack for t in time]
 
-        '''
-        Use this if there is a day with both utc timestamps and new timestamps. It's stupid slow but will work
+
+        #Use this if there is a day with both utc timestamps and new timestamps. Its stupid slow but will work
         new_time = []
         for t in time:
             if not isinstance(t, long):
                 new_time += [self.sql_datetime_to_utc(t) - self.fuck_up_hack]
             else:
                 new_time += [t - self.fuck_up_hack]
-        '''
+
         data = zip(new_time, lat, lon)
 
         # get the date information for this data
@@ -45,6 +45,11 @@ class Gps(BetaTestInterface):
         # simplekml module allows for easy conversion of data to kml file type
         kml = simplekml.Kml()
 
+        if self.patientID == '3567':
+            homepnt = kml.newpoint(name='Patient Home',
+                                   coords=[(-95.994279, 41.263461)], )
+            homepnt.style.iconstyle.icon.href = 'http://maps.google.com/mapfiles/kml/paddle/ylw-stars.png'
+            homepnt.style.iconstyle.scale = 2.00
         # list of colors to be distributed based on time
         # violet - blue - yellowgreen - orange - red - magenta
         color_list = ['ffe22b8a', 'ffffff00', 'ff2fffad',
@@ -58,6 +63,8 @@ class Gps(BetaTestInterface):
         previous_lon = []
         duplicates_skipped = 0
         # looping through the entirety of the input data...
+
+
         for i in range(len(data)):
             # if the current time is passed the current color's time range, bump the color up to the next in the list
             if data[i][0] - start_utc > color_change_times[change_index]:

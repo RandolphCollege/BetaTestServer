@@ -9,7 +9,7 @@ class gpsTester(unittest.TestCase):
         self.database = ("localhost", "root", "moxie100")
 
     def testGPS(self):
-        gpsClass = Gps(self.database, '2772')
+        gpsClass = Gps(self.database, '3567')
         gpsClass.start()
         gpsClass.join()
 

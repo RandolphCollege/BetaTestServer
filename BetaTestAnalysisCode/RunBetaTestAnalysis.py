@@ -107,57 +107,27 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
     '''
     @staticmethod
     def email_beta_data(file_path_list, patient_id):
-        email_dict = {'2747': 'kschenk@randolphcollege.edu',
-                      #'2749': 'savannah.carroll@ucsf.edu',
-                      '2750': 'Reilly.Walker@ucsf.edu',
-                      '2751': 'tiffany.bence@unmc.edu',
-                      '2762': 'Michael.Schaffer@ucsf.edu',
+        email_dict = {'2750': 'Reilly.Walker@ucsf.edu',
                       '2769': 'afella@randolphcollege.edu',
-                      '2770': 'sbonasera@unmc.edu',
-                      '2771': 'ssdill@randolphcollege.edu',
-                      '2772': 'erhuber@randolphcollege.edu',
                       '2773': 'segrissom@randolphcollege.edu',
                       '2774': 'amhart@randolphcollege.edu',
                       '2775': 'stucker@randolphcollege.edu',
                       '2776': 'gishen@uchicago.edu',
-                      '2777': 'Kasia.Gawlas@ucsf.edu',
-                      '2779': 'segrissom@randolphcollege.edu',
-                      '2780': 'karen.backus@unmc.edu',
-                      '2781': 'paige.scholer@unmc.edu',
-                      '2782': 'ifortune@unmc.edu',
-                      '3029': 'kschenk@randolphcollege.edu',
-                      '3030': 'ssdill@randolphcollege.edu',
-                      '3567': 'kschenk@randolphcollege.edu',
-                      'george.netscher': 'gnetscher@gmail.com',
-                      'sarah.dulaney': 'Sarah.Dulaney@ucsf.edu',
-                      'julien.jacquemot': 'julien.jacquemot@gmail.com'
+                      '3031':  'joan.ewalt@unmc.edu',
+                      '3033': 'sarah.wolnisty@unmc.edu',
+                      '3035': 'afella@randolphcollege.edu'
                       }
 
         dce_dict = {
-            '2747': 'Katrin Schenk',
-            #'2749': 'Savannah',
             '2750': 'Reilly',
-            '2751': 'Tiffany',
-            '2762': 'Michael Schaffer',
             '2769': 'Alex Fella',
-            '2770': 'Steve',
-            '2771': 'Sophia',
-            '2772': 'Eric',
             '2773': 'Sarah',
             '2774': 'Allison',
             '2775': 'Sonja',
             '2776': 'Galen',
-            '2777': 'Kasia',
-            '2779': 'Groot',
-            '2780': 'Karen',
-            '2781': 'Paige',
-            '2782': 'Ileana',
-            '3029': 'Groot',
-            '3030': 'Groot',
-            '3567': 'Groot',
-            'george.netscher': 'George',
-            'sarah.dulaney': 'Sarah',
-            'julien.jacquemot': 'Julien'
+            '3031': 'Joan',
+            '3033': 'Sarah',
+            '3035': 'Nexus 6P'
             }
 
         survey_dict = {'GPS': 'https://www.surveymonkey.com/r/BetaTestAccuracyReport',
@@ -189,25 +159,26 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
         # dUct-TAPe
         hack_add = email_dict[previous_dce].split('@')[-1]
-        if hack_add == 'randolphcollege.edu' or hack_add == 'uchicago.edu':
+        if hack_add == 'randolphcollege.edu'or hack_add == 'uchicago.edu':
             hack_add = 'randolph'
-        if hack_add == 'ucsf.edu' or hack_add == 'gmail.com':
+        if previous_dce == 'ucsf.edu':
             hack_add = 'ucsf'
         if hack_add == 'unmc.edu':
             hack_add = 'unmc'
 
+
         # Eliminate all files that don't go to the specified group without emailing
-        if not hack_add == 'ucsf':
+        if not hack_add == 'unmc':
             for kill_file in range(len(file_path_list)):
                 os.remove(file_path_list[kill_file])
             return []
 
         # Grab the email address to send to based on the dce
-        recipient = email_dict[previous_dce]
-        #recipient = 'erhuber@randolphcollege.edu'
+        #recipient = email_dict[previous_dce]
+        recipient = 'gishen@uchicago.edu'
 
         # Define a date object to let the beta testers know what day the data is for
-        yesterday = datetime.now() - timedelta(days=1, hours=4)
+        yesterday = datetime.now() - timedelta(days=3, hours=4)
         yesterday = yesterday.date()
 
         # get the types of files that are included
@@ -268,7 +239,7 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
         # Define where the email will actually go (earlier, we only set up the header)
         to_email = [recipient]
-        to_email += ['afella@randolphcollege.edu']
+        #to_email += ['afella@randolphcollege.edu']
 
         # Send the email
         s.sendmail(from_email, to_email, msg.as_string())
@@ -281,19 +252,22 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
     to actually return the file path (multiprocessing is not something I know about)
     '''
     def launch_beta_evals(self, patient_id):
+
         betaGPStest = Gps(self.database, patient_id)
         betaGPStest.start()
         betaGPStest.join()
+
 
         betaStepstest = StepCount(self.database, patient_id)
         betaStepstest.start()
         betaStepstest.join()
 
-        #'''
+
         betaRoomtest = RoomLocation(self.database, patient_id)
         betaRoomtest.start()
         betaRoomtest.join()
-        #'''
+
+
     '''
     calls each function in appropriate order to process all data for the day
     '''
@@ -304,4 +278,4 @@ class RunBetaTestAnalysis(DatabaseWrapper, multiprocessing.Process):
 
             self.launch_beta_evals(patient_id)
             file_list = self.get_patient_files(patient_id)
-            #self.email_beta_data(file_list, patient_id)
+            self.email_beta_data(file_list, patient_id)
